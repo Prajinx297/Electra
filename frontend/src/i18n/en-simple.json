@@ -1,0 +1,18 @@
+{
+  "appTitle": "ELECTRA",
+  "guestMode": "Guest mode",
+  "signedInAs": "You are signed in",
+  "keepGoing": "Next step",
+  "goBack": "Go back",
+  "tellMeMore": "More help",
+  "language": "Language",
+  "simple": "Simple",
+  "normal": "Normal",
+  "detailed": "Detailed",
+  "accessibleOnly": "Only easy-access places",
+  "addToCalendar": "Save the date",
+  "directions": "Get directions",
+  "whatThisMeans": "What this means",
+  "oneStepAtATime": "One step now",
+  "confusionHeatmap": "Confusion map"
+}

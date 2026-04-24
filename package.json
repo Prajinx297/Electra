@@ -1,0 +1,24 @@
+{
+  "name": "electra",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:frontend dev:backend",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000",
+    "build": "npm --prefix frontend run build",
+    "test": "npm --prefix frontend run test && npm --prefix frontend run test:e2e && python -m pytest backend",
+    "test:frontend": "npm --prefix frontend run test",
+    "test:backend": "python -m pytest backend",
+    "coverage": "npm --prefix frontend run coverage",
+    "lint": "npm --prefix frontend run lint"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.8",
+    "jsdom": "^26.1.0",
+    "npm-run-all": "^4.1.5"
+  }
+}
