@@ -1,34 +1,40 @@
 :root {
   color-scheme: light dark;
-  --background: #fafaf8;
+  /* Light mode: clean and crisp */
+  --background: #f8f9fa;
   --surface: #ffffff;
-  --surface-2: #f4f2ee;
-  --ink: #1a1a2e;
-  --ink-secondary: #6b6b7a;
-  --civic-green: #2d7d5a;
-  --civic-green-light: #e8f5ee;
-  --civic-amber: #c4730a;
-  --civic-amber-light: #fff4e0;
-  --civic-red: #c0392b;
-  --civic-red-light: #fef0ee;
-  --accent: #4a6fa5;
-  --accent-light: #ebf0fa;
-  --border: #e8e6e1;
-  --shadow: rgba(0, 0, 0, 0.06);
+  --surface-2: #f1f3f5;
+  --ink: #111827;
+  --ink-secondary: #4b5563;
+  --civic-green: #059669;
+  --civic-green-light: #d1fae5;
+  --civic-amber: #d97706;
+  --civic-amber-light: #fef3c7;
+  --civic-red: #dc2626;
+  --civic-red-light: #fee2e2;
+  --accent: #2563eb;
+  --accent-light: #dbeafe;
+  --border: #e5e7eb;
+  --shadow: rgba(0, 0, 0, 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #11131a;
-    --surface: #181b23;
-    --surface-2: #212531;
-    --ink: #f6f3ee;
-    --ink-secondary: #c1c1d0;
-    --civic-green-light: rgba(45, 125, 90, 0.18);
-    --civic-amber-light: rgba(196, 115, 10, 0.18);
-    --civic-red-light: rgba(192, 57, 43, 0.18);
-    --accent-light: rgba(74, 111, 165, 0.18);
-    --border: #313645;
-    --shadow: rgba(0, 0, 0, 0.25);
+    /* Premium dark mode: deep, sleek backgrounds with subtle vibrant accents */
+    --background: #09090b;
+    --surface: #18181b;
+    --surface-2: #27272a;
+    --ink: #f4f4f5;
+    --ink-secondary: #a1a1aa;
+    --civic-green: #10b981;
+    --civic-green-light: rgba(16, 185, 129, 0.15);
+    --civic-amber: #f59e0b;
+    --civic-amber-light: rgba(245, 158, 11, 0.15);
+    --civic-red: #ef4444;
+    --civic-red-light: rgba(239, 68, 68, 0.15);
+    --accent: #3b82f6;
+    --accent-light: rgba(59, 130, 246, 0.15);
+    --border: #3f3f46;
+    --shadow: rgba(0, 0, 0, 0.4);
   }
 }

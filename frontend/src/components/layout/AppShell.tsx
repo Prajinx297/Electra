@@ -121,6 +121,7 @@ export const AppShell = ({
               response={currentResponse}
               language={language}
               cognitiveLevel={cognitiveLevel}
+              busy={busy}
               onAsk={onAsk}
               onCognitiveLevelChange={onCognitiveLevelChange}
             />

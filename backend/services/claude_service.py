@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import json
 import os
+import logging
 from dataclasses import dataclass
 from typing import Any
 
-from anthropic import Anthropic
+from anthropic import AsyncAnthropic
 
 from backend.services.sanitizer import sanitize_user_text
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = """
 You are the Oracle for ELECTRA, a civic intelligence operating system for real voters.
@@ -325,10 +328,10 @@ def fallback_decision(
 class ClaudeOracleService:
     def __init__(self) -> None:
         self.api_key = os.getenv("ANTHROPIC_API_KEY")
-        self.model = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
-        self.client = Anthropic(api_key=self.api_key) if self.api_key else None
+        self.model = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022")
+        self.client = AsyncAnthropic(api_key=self.api_key) if self.api_key else None
 
-    def generate(
+    async def generate(
         self,
         user_message: str,
         current_state: str,
@@ -339,11 +342,13 @@ class ClaudeOracleService:
         sanitized_message = sanitize_user_text(user_message)
 
         if self.client is None:
+            logger.warning("No Anthropic API key found. Using fallback oracle decision.")
             return fallback_decision(
                 sanitized_message, current_state, cognitive_level, language
             )
 
-        response = self.client.messages.create(
+        logger.info(f"Generating decision for state: {current_state}")
+        response = await self.client.messages.create(
             model=self.model,
             max_tokens=700,
             temperature=0.2,
@@ -368,7 +373,8 @@ class ClaudeOracleService:
         )
         try:
             return json.loads(text[text.find("{") : text.rfind("}") + 1])
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as exc:
+            logger.error(f"Failed to parse LLM JSON response: {exc}")
             return fallback_decision(
                 sanitized_message, current_state, cognitive_level, language
             )

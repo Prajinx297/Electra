@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ensureAnonymousAuth, getCurrentUserToken, signInWithGoogle, subscribeToAuth } from "./firebase/auth";
 import { persistSession } from "./firebase/firestore";
 import { requestOracle } from "./engines/oracleClient";
@@ -85,7 +85,7 @@ const App = () => {
     return () => window.removeEventListener("keydown", handler);
   }, [demoMode, toggleDemoMode, toggleDemoPaused]);
 
-  const runOracle = async (message: string) => {
+  const runOracle = useCallback(async (message: string) => {
     setBusy(true);
     try {
       const token = await getCurrentUserToken();
@@ -108,7 +108,7 @@ const App = () => {
     } finally {
       setBusy(false);
     }
-  };
+  }, [applyOracleResponse, cognitiveLevel, currentState, history, journeyId, language, pauseStartedAt]);
 
   useEffect(() => {
     if (!demoMode || demoPaused || demoIndex >= demoPrompts.length || busy) {
@@ -120,7 +120,7 @@ const App = () => {
       setDemoIndex((current) => current + 1);
     }, 4000);
     return () => window.clearTimeout(timer);
-  }, [busy, demoIndex, demoMode, demoPaused]);
+  }, [busy, demoIndex, demoMode, demoPaused, runOracle]);
 
   useEffect(() => {
     if (!demoMode) {
@@ -159,33 +159,33 @@ const App = () => {
     userId
   ]);
 
-  const handlePrimaryAction = async () => {
+  const handlePrimaryAction = useCallback(async () => {
     const actionText = draftSelection
       ? `${currentResponse.primaryAction.action}: ${draftSelection}`
       : currentResponse.primaryAction.action;
     await runOracle(actionText);
-  };
+  }, [draftSelection, currentResponse.primaryAction.action, runOracle]);
 
-  const handleSecondaryAction = async () => {
+  const handleSecondaryAction = useCallback(async () => {
     if (!currentResponse.secondaryAction) {
       return;
     }
     await trackConfusionDetected(currentState, "reread");
     await runOracle(currentResponse.secondaryAction.action);
-  };
+  }, [currentResponse.secondaryAction, currentState, runOracle]);
 
-  const handleLanguageChange = async (nextLanguage: LanguageCode) => {
+  const handleLanguageChange = useCallback(async (nextLanguage: LanguageCode) => {
     const previous = language;
     setLanguage(nextLanguage);
     storeLanguagePreference(nextLanguage);
     await trackLanguageSwitched(previous, nextLanguage);
     await runOracle("Please explain the same step in my chosen language.");
-  };
+  }, [language, setLanguage, runOracle]);
 
-  const handleCognitiveLevelChange = async (level: CognitiveLevel) => {
+  const handleCognitiveLevelChange = useCallback(async (level: CognitiveLevel) => {
     setCognitiveLevel(level);
     await runOracle("Please explain this same step at my chosen detail level.");
-  };
+  }, [setCognitiveLevel, runOracle]);
 
   const demoAnnotation = useMemo(
     () => (demoMode ? demoNotes[Math.min(demoIndex, demoNotes.length - 1)] : null),

@@ -8,6 +8,7 @@ interface OraclePanelProps {
   response: OracleResponse;
   language: LanguageCode;
   cognitiveLevel: CognitiveLevel;
+  busy?: boolean;
   onAsk: (message: string) => Promise<void>;
   onCognitiveLevelChange: (level: CognitiveLevel) => void;
 }
@@ -16,6 +17,7 @@ export const OraclePanel = ({
   response,
   language,
   cognitiveLevel,
+  busy,
   onAsk,
   onCognitiveLevelChange
 }: OraclePanelProps) => {
@@ -23,12 +25,22 @@ export const OraclePanel = ({
 
   return (
     <div className="space-y-4">
-      <OracleMessage message={response.message} tone={response.tone} />
-      {response.proactiveWarning ? <ProactiveWarning message={response.proactiveWarning} /> : null}
+      {busy ? (
+        <div className="animate-pulse space-y-4">
+          <div className="h-24 w-full rounded-[24px] bg-[var(--surface-2)]"></div>
+          <div className="h-4 w-3/4 rounded bg-[var(--surface-2)]"></div>
+        </div>
+      ) : (
+        <>
+          <OracleMessage message={response.message} tone={response.tone} />
+          {response.proactiveWarning ? <ProactiveWarning message={response.proactiveWarning} /> : null}
+        </>
+      )}
+
       <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_8px_24px_var(--shadow)]">
         <p className="text-sm font-semibold text-[var(--ink)]">Explanation style</p>
         <div className="mt-3">
-          <CognitiveLevelToggle value={cognitiveLevel} onChange={onCognitiveLevelChange} />
+          <CognitiveLevelToggle value={cognitiveLevel} onChange={onCognitiveLevelChange} disabled={busy} />
         </div>
         <label className="mt-4 block">
           <span className="mb-2 block text-sm text-[var(--ink-secondary)]">
@@ -37,12 +49,14 @@ export const OraclePanel = ({
           <textarea
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
-            className="min-h-[112px] w-full rounded-[18px] border border-[var(--border)] px-4 py-3"
+            disabled={busy}
+            className="min-h-[112px] w-full rounded-[18px] border border-[var(--border)] px-4 py-3 disabled:opacity-50"
             placeholder="Ask a question"
           />
         </label>
         <button
           type="button"
+          disabled={busy}
           onClick={() => {
             if (!question.trim()) {
               return;
@@ -50,7 +64,7 @@ export const OraclePanel = ({
             void onAsk(question);
             setQuestion("");
           }}
-          className="mt-3 min-h-12 rounded-full bg-[var(--surface-2)] px-4 text-sm font-semibold text-[var(--ink)]"
+          className="mt-3 min-h-12 rounded-full bg-[var(--surface-2)] px-4 text-sm font-semibold text-[var(--ink)] transition-colors hover:bg-[var(--border)] disabled:opacity-50"
         >
           Ask this question
         </button>

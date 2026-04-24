@@ -42,7 +42,7 @@ async def oracle_endpoint(
 ):
     _ = user
     started = time.perf_counter()
-    parsed = oracle_service.generate(
+    parsed = await oracle_service.generate(
         sanitize_user_text(payload.userMessage),
         payload.currentState,
         payload.history,
