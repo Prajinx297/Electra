@@ -2,15 +2,25 @@ import { useState } from "react";
 import { OracleMessage } from "./OracleMessage";
 import { CognitiveLevelToggle } from "../shared/CognitiveLevelToggle";
 import { ProactiveWarning } from "../shared/ProactiveWarning";
-import type { CognitiveLevel, LanguageCode, OracleResponse } from "../../types";
+import { TrustPanel } from "../../features/trust/TrustPanel";
+import { StreamingOraclePanel } from "../../features/streaming/StreamingOraclePanel";
+import type { ChangeEvent } from "react";
+import type { CognitiveLevel, LanguageCode, OracleRequest, OracleResponse } from "../../types";
 
 interface OraclePanelProps {
   response: OracleResponse;
   language: LanguageCode;
   cognitiveLevel: CognitiveLevel;
   busy?: boolean;
+  sessionId: string;
+  stuckInterventionVisible: boolean;
+  streamRequest?: OracleRequest | null;
+  streamToken?: string | null;
   onAsk: (message: string) => Promise<void>;
+  onStreamComplete?: (response: OracleResponse) => void;
+  onStreamError?: (message: string) => void;
   onCognitiveLevelChange: (level: CognitiveLevel) => void;
+  onDismissStuck: () => void;
 }
 
 export const OraclePanel = ({
@@ -18,14 +28,46 @@ export const OraclePanel = ({
   language,
   cognitiveLevel,
   busy,
+  sessionId,
+  stuckInterventionVisible,
+  streamRequest,
+  streamToken,
   onAsk,
-  onCognitiveLevelChange
+  onStreamComplete,
+  onStreamError,
+  onCognitiveLevelChange,
+  onDismissStuck
 }: OraclePanelProps) => {
   const [question, setQuestion] = useState("");
 
+  const handleQuestionChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setQuestion(event.target.value);
+  };
+
+  const handleAsk = () => {
+    if (!question.trim()) {
+      return;
+    }
+    void onAsk(question);
+    setQuestion("");
+  };
+
+  const handleStuckHelp = () => {
+    onDismissStuck();
+    void onAsk("I am stuck. Please make this simpler and tell me only the next action.");
+  };
+
   return (
     <div className="space-y-4">
-      {busy ? (
+      {streamRequest ? (
+        <StreamingOraclePanel
+          request={streamRequest}
+          sessionId={sessionId}
+          token={streamToken}
+          onComplete={onStreamComplete}
+          onError={onStreamError}
+        />
+      ) : busy ? (
         <div className="animate-pulse space-y-4">
           <div className="h-24 w-full rounded-[24px] bg-[var(--surface-2)]"></div>
           <div className="h-4 w-3/4 rounded bg-[var(--surface-2)]"></div>
@@ -34,6 +76,20 @@ export const OraclePanel = ({
         <>
           <OracleMessage message={response.message} tone={response.tone} />
           {response.proactiveWarning ? <ProactiveWarning message={response.proactiveWarning} /> : null}
+          {stuckInterventionVisible ? (
+            <section className="rounded-[18px] border border-[var(--civic-amber)] bg-[var(--civic-amber-light)] p-4 text-[var(--ink)]">
+              <p className="font-semibold">Stuck here?</p>
+              <p className="mt-1 text-sm">I can simplify this to one clear next action.</p>
+              <button
+                type="button"
+                onClick={handleStuckHelp}
+                className="mt-3 min-h-10 rounded-full bg-[var(--ink)] px-4 text-sm font-bold text-[var(--surface)]"
+              >
+                Simplify this step
+              </button>
+            </section>
+          ) : null}
+          <TrustPanel sessionId={sessionId} trust={response.trust} />
         </>
       )}
 
@@ -48,7 +104,7 @@ export const OraclePanel = ({
           </span>
           <textarea
             value={question}
-            onChange={(event) => setQuestion(event.target.value)}
+            onChange={handleQuestionChange}
             disabled={busy}
             className="min-h-[112px] w-full rounded-[18px] border border-[var(--border)] px-4 py-3 disabled:opacity-50"
             placeholder="Ask a question"
@@ -57,13 +113,7 @@ export const OraclePanel = ({
         <button
           type="button"
           disabled={busy}
-          onClick={() => {
-            if (!question.trim()) {
-              return;
-            }
-            void onAsk(question);
-            setQuestion("");
-          }}
+          onClick={handleAsk}
           className="mt-3 min-h-12 rounded-full bg-[var(--surface-2)] px-4 text-sm font-semibold text-[var(--ink)] transition-colors hover:bg-[var(--border)] disabled:opacity-50"
         >
           Ask this question

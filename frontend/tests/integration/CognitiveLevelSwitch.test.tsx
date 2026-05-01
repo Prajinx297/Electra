@@ -24,11 +24,18 @@ vi.mock("../../src/engines/oracleClient", () => ({
 describe("cognitive level switch", () => {
   beforeEach(() => {
     useElectraStore.setState(useElectraStore.getInitialState(), true);
+    useElectraStore.getState().completeOnboarding({
+      location: "Atlanta, GA",
+      familiarity: "first-time",
+      accessibilityNeeds: [],
+      toneMode: "citizen",
+      completedAt: "2026-04-30T00:00:00.000Z"
+    });
   });
 
   it("re-prompts the oracle on level change", async () => {
     render(<App />);
-    await userEvent.click(screen.getByRole("button", { name: "detailed" }));
+    await userEvent.click(screen.getByRole("button", { name: "Policy expert" }));
     await waitFor(() => expect(requestOracle).toHaveBeenCalled());
   });
 });

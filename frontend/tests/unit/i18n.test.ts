@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { translations } from "../../src/i18n";
+import { getCopy, translations } from "../../src/i18n";
 
 describe("i18n", () => {
   it("has the same keys in every language file", () => {
@@ -15,5 +15,18 @@ describe("i18n", () => {
         expect(value.trim().length).toBeGreaterThan(0);
       });
     });
+  });
+
+  it("resolves every declared locale key without undefined", () => {
+    Object.entries(translations).forEach(([language, dictionary]) => {
+      Object.keys(dictionary).forEach((key) => {
+        expect(getCopy(language as keyof typeof translations, key as keyof typeof dictionary)).toBeDefined();
+      });
+    });
+  });
+
+  it("tone variants produce different strings for simplified copy", () => {
+    expect(getCopy("en", "tellMeMore")).not.toBe(getCopy("en-simple", "tellMeMore"));
+    expect(getCopy("en", "oneStepAtATime")).not.toBe(getCopy("en-simple", "oneStepAtATime"));
   });
 });

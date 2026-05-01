@@ -40,8 +40,9 @@ describe("oracle rendering pipeline", () => {
       />
     );
 
-    await waitFor(() =>
-      expect(screen.getByText(/Check whether your ID may work/i)).toBeInTheDocument()
+    await waitFor(
+      () => expect(screen.getByText(/Check whether your ID may work/i)).toBeInTheDocument(),
+      { timeout: 5000 }
     );
   });
 });

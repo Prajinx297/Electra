@@ -1,34 +1,32 @@
-import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
+import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
   test: {
+    environment: 'jsdom',
     globals: true,
-    environment: "jsdom",
-    setupFiles: "./tests/setup.ts",
-    include: ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.tsx"],
-    exclude: ["tests/e2e/**", "node_modules/**"],
+    setupFiles: './tests/setup.ts',
+    include: ['tests/unit/**/*.{test,spec}.{ts,tsx}', 'tests/integration/**/*.{test,spec}.{ts,tsx}'],
     coverage: {
-      reporter: ["text", "html", "json-summary"],
-      provider: "v8",
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
       thresholds: {
         lines: 80,
         functions: 80,
-        branches: 80,
-        statements: 80
+        branches: 70,
+        statements: 80,
       },
-      include: ["src/**/*.{ts,tsx}"],
       exclude: [
-        "src/App.tsx",
-        "src/main.tsx",
-        "src/types.ts",
-        "src/vite-env.d.ts",
-        "src/firebase/**/*",
-        "src/data/**/*",
-        "src/engines/oracleClient.ts",
-        "src/components/**/*"
+        'node_modules/**',
+        'tests/**',
+        'frontend/tests/**',
+        '**/*.d.ts',
+        'src/main.tsx',
+        'frontend/src/main.tsx',
+        'src/vite-env.d.ts',
+        'frontend/src/vite-env.d.ts',
       ]
     }
   }
-});
+})

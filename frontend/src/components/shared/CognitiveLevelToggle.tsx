@@ -6,7 +6,13 @@ interface CognitiveLevelToggleProps {
   disabled?: boolean;
 }
 
-const levels: CognitiveLevel[] = ["simple", "normal", "detailed"];
+const levels: CognitiveLevel[] = ["five-year-old", "citizen", "policy-expert"];
+
+const labels: Record<string, string> = {
+  "five-year-old": "5-year-old",
+  citizen: "Citizen",
+  "policy-expert": "Policy expert"
+};
 
 export const CognitiveLevelToggle = ({
   value,
@@ -29,7 +35,7 @@ export const CognitiveLevelToggle = ({
             active ? "bg-[var(--civic-green)] text-white" : "text-[var(--ink)] hover:bg-[var(--border)]"
           }`}
         >
-          {level}
+          {labels[level] ?? level}
         </button>
       );
     })}

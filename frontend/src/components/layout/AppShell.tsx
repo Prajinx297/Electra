@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Header } from "./Header";
 import { ContextPanel } from "./ContextPanel";
@@ -9,7 +9,12 @@ import { ActionBar } from "../oracle/ActionBar";
 import { ArenaPanel } from "../arena/ArenaPanel";
 import { useElectraStore } from "../../engines/stateEngine";
 import { focusFirstInteractive } from "../../utils/accessibilityHelpers";
-import type { CognitiveLevel, LanguageCode } from "../../types";
+import { JourneyVisualizer } from "../../features/journey/JourneyVisualizer";
+import { ElectionSimulator } from "../../features/simulator/ElectionSimulator";
+import { CivicScoreCard } from "../../features/civic-score/CivicScoreCard";
+import { useFeatureFlag } from "../../hooks/useFeatureFlag";
+import { civicBus } from "../../events/civicEventBus";
+import type { CognitiveLevel, LanguageCode, OracleRequest, OracleResponse } from "../../types";
 
 interface AppShellProps {
   userLabel: string;
@@ -20,6 +25,10 @@ interface AppShellProps {
   onLanguageChange: (language: LanguageCode) => void;
   onCognitiveLevelChange: (level: CognitiveLevel) => void;
   onSignIn: () => Promise<unknown>;
+  streamRequest?: OracleRequest | null;
+  streamToken?: string | null;
+  onStreamComplete?: (response: OracleResponse) => void;
+  onStreamError?: (message: string) => void;
   demoAnnotation: string | null;
 }
 
@@ -32,20 +41,93 @@ export const AppShell = ({
   onLanguageChange,
   onCognitiveLevelChange,
   onSignIn,
+  streamRequest = null,
+  streamToken = null,
+  onStreamComplete = () => undefined,
+  onStreamError = () => undefined,
   demoAnnotation
 }: AppShellProps) => {
   const reducedMotion = useReducedMotion();
+  const visualizerEnabled = useFeatureFlag("journey_visualizer_enabled");
+  const simulatorEnabled = useFeatureFlag("election_simulator_enabled");
+  const scoreEnabled = useFeatureFlag("civic_score_enabled");
   const mainRef = useRef<HTMLDivElement>(null);
   const hasMounted = useRef(false);
   const skipLinkRef = useRef<HTMLButtonElement>(null);
+  const [visualizerOpen, setVisualizerOpen] = useState(true);
+  const [simulatorOpen, setSimulatorOpen] = useState(false);
+  const [scoreOpen, setScoreOpen] = useState(false);
+  const [scorePulse, setScorePulse] = useState(0);
   const {
     language,
     cognitiveLevel,
     currentResponse,
     currentRender,
     currentRenderProps,
-    predictionHit
+    predictionHit,
+    journeyId,
+    stuckInterventionVisible,
+    dismissStuckIntervention
   } = useElectraStore();
+
+  useEffect(() => {
+    const readScore = () => {
+      const raw = window.localStorage.getItem("electra:civic-score");
+      if (!raw) {
+        return 0;
+      }
+      try {
+        const parsed = JSON.parse(raw) as { score?: number };
+        return parsed.score ?? 0;
+      } catch {
+        return 0;
+      }
+    };
+
+    setScorePulse(readScore());
+  }, [scoreOpen]);
+
+  useEffect(() => {
+    const applyScore = (points: number) => {
+      const raw = window.localStorage.getItem("electra:civic-score");
+      let currentScore = 0;
+      let streakDays = 1;
+
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw) as { score?: number; streakDays?: number };
+          currentScore = parsed.score ?? 0;
+          streakDays = parsed.streakDays ?? 1;
+        } catch {
+          currentScore = 0;
+        }
+      }
+
+      const nextScore = currentScore + points;
+      window.localStorage.setItem(
+        "electra:civic-score",
+        JSON.stringify({
+          score: nextScore,
+          badges: [],
+          streakDays,
+          highestBadge: null
+        })
+      );
+      setScorePulse(nextScore);
+    };
+
+    const unsubscribeOracle = civicBus.on("ORACLE_RESPONSE", () => applyScore(10));
+    const unsubscribeStep = civicBus.on("STEP_COMPLETED", () => applyScore(25));
+    const unsubscribeConfusion = civicBus.on("CONFUSION_DETECTED", () => applyScore(5));
+    const unsubscribeScore = civicBus.on("SCORE_EARNED", ({ points }) => applyScore(points));
+
+    return () => {
+      unsubscribeOracle();
+      unsubscribeStep();
+      unsubscribeConfusion();
+      unsubscribeScore();
+    };
+  }, []);
 
   useEffect(() => {
     if (!hasMounted.current) {
@@ -99,7 +181,15 @@ export const AppShell = ({
       <Header
         language={language}
         userLabel={userLabel}
+        visualizerOpen={visualizerOpen}
+        visualizerEnabled={visualizerEnabled}
+        simulatorEnabled={simulatorEnabled}
+        scoreEnabled={scoreEnabled}
+        score={scorePulse}
         onLanguageChange={onLanguageChange}
+        onVisualizerToggle={() => setVisualizerOpen((current) => !current)}
+        onSimulatorOpen={() => setSimulatorOpen(true)}
+        onScoreOpen={() => setScoreOpen(true)}
         onSignIn={onSignIn}
       />
       <div className="mt-4">
@@ -109,7 +199,15 @@ export const AppShell = ({
         />
       </div>
       <div id="main-content" ref={mainRef} tabIndex={-1} className="mt-4 flex gap-4">
-        <JourneySidebar />
+        {visualizerEnabled && visualizerOpen ? (
+          <aside className="hidden w-[430px] shrink-0 xl:block">
+            <JourneyVisualizer
+              onExplainStep={(stepName) => onAsk(`Explain the civic step: ${stepName}`)}
+            />
+          </aside>
+        ) : (
+          <JourneySidebar />
+        )}
         <main className="min-w-0 flex-1">
           {demoAnnotation ? (
             <div className="mb-4 rounded-[18px] bg-[var(--accent-light)] px-4 py-3 text-sm text-[var(--ink)]">
@@ -122,8 +220,15 @@ export const AppShell = ({
               language={language}
               cognitiveLevel={cognitiveLevel}
               busy={busy}
+              sessionId={journeyId}
+              stuckInterventionVisible={stuckInterventionVisible}
+              streamRequest={streamRequest}
+              streamToken={streamToken}
+              onStreamComplete={onStreamComplete}
+              onStreamError={onStreamError}
               onAsk={onAsk}
               onCognitiveLevelChange={onCognitiveLevelChange}
+              onDismissStuck={dismissStuckIntervention}
             />
             <AnimatePresence mode="wait">
               <motion.div
@@ -157,6 +262,12 @@ export const AppShell = ({
           onSecondary={onSecondaryAction}
         />
       </div>
+      <CivicScoreCard open={scoreOpen} onClose={() => setScoreOpen(false)} />
+      <AnimatePresence>
+        {simulatorOpen && simulatorEnabled ? (
+          <ElectionSimulator onClose={() => setSimulatorOpen(false)} />
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 };

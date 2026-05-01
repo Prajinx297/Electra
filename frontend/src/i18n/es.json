@@ -1,18 +1,22 @@
 {
-  "appTitle": "ELECTRA",
-  "guestMode": "Modo invitado",
-  "signedInAs": "Sesion iniciada como",
-  "keepGoing": "Seguir",
-  "goBack": "Volver",
-  "tellMeMore": "Cuentame mas",
-  "language": "Idioma",
-  "simple": "Simple",
-  "normal": "Normal",
-  "detailed": "Detallado",
-  "accessibleOnly": "Solo lugares accesibles",
-  "addToCalendar": "Agregar al calendario",
-  "directions": "Como llegar",
-  "whatThisMeans": "Lo que esto significa para usted",
-  "oneStepAtATime": "Un paso a la vez",
-  "confusionHeatmap": "Mapa de confusion"
+  "app": {
+    "title": "ELECTRA",
+    "subtitle": "SO de Inteligencia Cívica",
+    "demo_mode": "Modo de Demostración Activo"
+  },
+  "oracle": {
+    "input_placeholder": "Escribe tu respuesta aquí...",
+    "send_button": "Enviar"
+  },
+  "settings": {
+    "language": "Idioma",
+    "cognitive_level": "Nivel de Detalle",
+    "level_simple": "Simple",
+    "level_normal": "Normal",
+    "level_detailed": "Detallado"
+  },
+  "journey": {
+    "history": "Historial",
+    "rewind_prompt": "Volver a este paso"
+  }
 }

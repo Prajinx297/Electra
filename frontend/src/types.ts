@@ -5,7 +5,10 @@ export type CognitiveLevel =
   | "normal"
   | "detailed"
   | "beginner"
-  | "advanced";
+  | "advanced"
+  | "five-year-old"
+  | "citizen"
+  | "policy-expert";
 
 export type Tone = "warm" | "informative" | "warning" | "celebratory";
 
@@ -108,6 +111,114 @@ export interface OracleResponse {
   confidence?: number;
   speech?: string;
   warnings?: string[];
+  trust?: TrustMetadata;
+}
+
+export interface CivicSource {
+  id: string;
+  title: string;
+  url: string;
+  publisher: string;
+  lastVerified: string;
+}
+
+export interface TrustMetadata {
+  sources: CivicSource[];
+  confidence: number;
+  lastVerified: string;
+  rationale: string;
+}
+
+export interface OracleStreamChunk {
+  delta: string;
+  done?: boolean;
+  trust?: TrustMetadata;
+  response?: OracleResponse;
+}
+
+export type BadgeId =
+  | "civic-newcomer"
+  | "informed-voter"
+  | "civic-champion"
+  | "democracy-defender"
+  | "constitutional-scholar";
+
+export interface CivicBadge {
+  id: BadgeId;
+  label: string;
+  threshold: number;
+  icon: string;
+  earned: boolean;
+}
+
+export interface CivicScoreResponse {
+  score: number;
+  badges: CivicBadge[];
+  streakDays: number;
+  highestBadge: CivicBadge | null;
+}
+
+export interface ScoreUpdate extends CivicScoreResponse {
+  addedPoints: number;
+  newlyUnlocked: CivicBadge[];
+  reason: string;
+}
+
+export type CivicScoreEventType =
+  | "onboarding_complete"
+  | "oracle_question"
+  | "journey_step_complete"
+  | "journey_complete"
+  | "outdated_source_reviewed"
+  | "simulator_run"
+  | "score_shared"
+  | "return_streak";
+
+export interface BallotSelection {
+  president: string;
+  senator: string;
+  measureA: "yes" | "no";
+}
+
+export interface BallotEvent {
+  serial: string;
+  precinct: string;
+  timestamp: string;
+  encryptedPayload: string;
+  signature: string;
+}
+
+export interface TallyResult {
+  totalVotes: number;
+  precinctsReporting: number;
+  confidenceInterval: number;
+  anomalyInjected: boolean;
+  totals: Array<{ candidate: string; votes: number }>;
+  affectedPrecinct?: string;
+}
+
+export interface CertificationEvent {
+  certifiedAt: string;
+  certificateId: string;
+  provenanceChain: string[];
+  summary: string;
+}
+
+export interface AuditResult {
+  ballotsSampled: number;
+  machineCount: number;
+  handCount: number;
+  discrepancy: number;
+  recommendation: string;
+}
+
+export interface OnboardingProfile {
+  location: string;
+  familiarity: "first-time" | "some-experience" | "confident";
+  accessibilityNeeds: string[];
+  toneMode: Extract<CognitiveLevel, "five-year-old" | "citizen" | "policy-expert">;
+  preferredLanguage?: LanguageCode;
+  completedAt: string;
 }
 
 export interface OracleRequest {
@@ -116,6 +227,8 @@ export interface OracleRequest {
   history: HistoryEntry[];
   cognitiveLevel: CognitiveLevel;
   language: LanguageCode;
+  sessionId?: string;
+  profile?: OnboardingProfile | null;
 }
 
 export interface JourneyNode {
@@ -156,6 +269,7 @@ export interface SessionPayload {
   language: LanguageCode;
   bookmarkedStates: JourneyState[];
   completedJourneys: string[];
+  profile: OnboardingProfile | null;
 }
 
 export interface PollingLocation {

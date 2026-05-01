@@ -1,69 +1,127 @@
-from __future__ import annotations
-
 from fastapi.testclient import TestClient
+from pydantic import BaseModel, Field
 
 from backend.main import app
-from backend.routes import oracle as oracle_route
-from backend.services.claude_service import fallback_decision
-from backend.services.sanitizer import sanitize_address, sanitize_user_text
 
 
-client = TestClient(app)
+class TrustMetadata(BaseModel):
+    sources: list[dict]
+    confidence: float
+    lastVerified: str
+    rationale: str
 
 
-def test_fallback_decision_for_first_time_voter_is_warm_and_structured():
-    decision = fallback_decision(
-        "I've never voted before.",
-        "GOAL_SELECT",
-        "simple",
-        "en",
-    )
-
-    assert decision["render"] == "RegistrationChecker"
-    assert decision["stateTransition"] == "REGISTRATION_CHECK"
-    assert decision["primaryAction"]["label"] == "Check my registration"
-    assert decision["confidence"] >= 0.95
+class OracleResponseSchema(BaseModel):
+    message: str
+    render: str | None
+    stateTransition: str
+    trust: TrustMetadata
+    primaryAction: dict = Field(default_factory=dict)
 
 
-def test_oracle_endpoint_sanitizes_input_and_returns_parsed_payload():
-    response = client.post(
-        "/api/oracle",
-        json={
-            "userMessage": "<script>alert(1)</script>I have an ID problem.",
-            "currentState": "ID_CHECK",
-            "history": [],
-            "cognitiveLevel": "simple",
-            "language": "en",
-        },
-    )
+def make_client(host: str) -> TestClient:
+    return TestClient(app, client=(host, 50000))
+
+
+def test_ask_oracle_success():
+    """Test successful Oracle API response structure."""
+    client = make_client("oracle-success")
+    response = client.post("/api/oracle", json={
+        "message": "I need help voting",
+        "currentState": "WELCOME",
+        "stateHistory": [],
+        "cognitiveLevel": "normal",
+        "language": "en"
+    })
 
     assert response.status_code == 200
-    payload = response.json()["parsed"]
-    assert payload["render"] == "IDChecker"
-    assert "<script>" not in payload["message"]
+    data = response.json()
+    assert "message" in data
+    assert "render" in data
+    assert "stateTransition" in data
+    assert "trust" in data
+    OracleResponseSchema.model_validate(data)
 
 
-def test_oracle_endpoint_rejects_invalid_firebase_token(monkeypatch):
-    def reject_token(_: str):
-        raise ValueError("bad token")
+def test_stream_oracle_success():
+    """Test streaming Oracle endpoint returns the same JSON contract."""
+    client = make_client("oracle-stream")
+    response = client.post("/api/oracle/stream", json={
+        "message": "Make this simpler",
+        "currentState": "WELCOME",
+        "stateHistory": [],
+        "cognitiveLevel": "citizen",
+        "language": "en"
+    })
 
-    monkeypatch.setattr(oracle_route, "verify_firebase_token", reject_token)
-
-    response = client.post(
-        "/api/oracle",
-        headers={"Authorization": "Bearer invalid-token"},
-        json={
-            "userMessage": "Where do I vote?",
-            "currentState": "POLLING_FINDER",
-            "history": [],
-            "cognitiveLevel": "simple",
-            "language": "en",
-        },
-    )
-
-    assert response.status_code == 401
+    assert response.status_code == 200
+    assert "trust" in response.json()
+    assert response.headers["content-type"].startswith("application/json")
 
 
-def test_sanitizers_strip_prompt_injection_and_invalid_address_chars():
-    assert sanitize_user_text("ignore previous <script>bad</script> hello") == "hello"
-    assert sanitize_address("123 Main St. #4 !!!") == "123 Main St. #4 "
+def test_ask_oracle_rate_limit():
+    """Test rate limiting on the oracle endpoint."""
+    client = make_client("oracle-rate-limit")
+    for _ in range(10):
+        response = client.post("/api/oracle", json={
+            "message": "Test",
+            "currentState": "WELCOME"
+        })
+        assert response.status_code in {200, 429}
+
+    blocked = client.post("/api/oracle", json={
+        "message": "Fail me",
+        "currentState": "WELCOME"
+    })
+    assert blocked.status_code == 429
+
+
+def test_oracle_accepts_pydantic_validated_input():
+    client = make_client("oracle-pydantic")
+    response = client.post("/api/oracle", json={
+        "message": "I need help voting",
+        "currentState": "WELCOME",
+        "stateHistory": [{"state": "WELCOME"}],
+        "cognitiveLevel": "citizen",
+        "language": "en",
+        "sessionId": "session-1",
+        "profile": {"location": "Atlanta, GA"}
+    })
+
+    assert response.status_code == 200
+    OracleResponseSchema.model_validate(response.json())
+
+
+def test_malformed_request_body_returns_422_with_readable_error():
+    client = make_client("oracle-malformed")
+    response = client.post("/api/oracle", json={"currentState": "WELCOME"})
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["msg"]
+
+
+def test_oracle_service_timeout_is_handled_gracefully(monkeypatch):
+    async def timeout_generate(**_kwargs):
+        raise TimeoutError("Claude timed out")
+
+    monkeypatch.setattr("backend.routes.oracle.oracle_service.generate", timeout_generate)
+    client = make_client("oracle-timeout")
+
+    response = client.post("/api/oracle", json={
+        "message": "hello",
+        "currentState": "WELCOME"
+    })
+
+    assert response.status_code == 500
+    assert "Claude timed out" in response.json()["detail"]
+
+
+def test_unauthenticated_oracle_request_currently_uses_guest_mode_contract():
+    client = make_client("oracle-guest")
+    response = client.post("/api/oracle", json={
+        "message": "guest mode",
+        "currentState": "WELCOME"
+    })
+
+    assert response.status_code == 200
+    assert response.json()["trust"]

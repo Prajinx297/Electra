@@ -1,18 +1,22 @@
 {
-  "appTitle": "ELECTRA",
-  "guestMode": "Guest mode",
-  "signedInAs": "You are signed in",
-  "keepGoing": "Next step",
-  "goBack": "Go back",
-  "tellMeMore": "More help",
-  "language": "Language",
-  "simple": "Simple",
-  "normal": "Normal",
-  "detailed": "Detailed",
-  "accessibleOnly": "Only easy-access places",
-  "addToCalendar": "Save the date",
-  "directions": "Get directions",
-  "whatThisMeans": "What this means",
-  "oneStepAtATime": "One step now",
-  "confusionHeatmap": "Confusion map"
+  "app": {
+    "title": "ELECTRA",
+    "subtitle": "Civic Helper",
+    "demo_mode": "Demo Mode On"
+  },
+  "oracle": {
+    "input_placeholder": "Type here...",
+    "send_button": "Send"
+  },
+  "settings": {
+    "language": "Language",
+    "cognitive_level": "Amount of details",
+    "level_simple": "A little",
+    "level_normal": "Normal",
+    "level_detailed": "A lot"
+  },
+  "journey": {
+    "history": "Past steps",
+    "rewind_prompt": "Go back here"
+  }
 }

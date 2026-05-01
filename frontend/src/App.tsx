@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ensureAnonymousAuth, getCurrentUserToken, signInWithGoogle, subscribeToAuth } from "./firebase/auth";
-import { persistSession } from "./firebase/firestore";
-import { requestOracle } from "./engines/oracleClient";
+import {
+  persistConversationTurn,
+  persistOnboardingProfile,
+  persistSession
+} from "./firebase/firestore";
 import { useElectraStore } from "./engines/stateEngine";
 import { AppShell } from "./components/layout/AppShell";
 import { AdminPanel } from "./components/layout/AdminPanel";
 import { preloadComponent } from "./components/arena/ComponentRegistry";
+import { useAdaptiveCopilot } from "./features/copilot/useAdaptiveCopilot";
+import { OnboardingEngine } from "./features/onboarding/OnboardingEngine";
+import { civicBus } from "./events/civicEventBus";
+import { civicEvents } from "./firebase/analytics";
+import { measureJourneyStepTime } from "./firebase/performance";
 import {
   buildPauseTracker,
   trackConfusionDetected,
@@ -14,7 +22,14 @@ import {
   trackStepCompleted
 } from "./engines/confusionTracker";
 import { storeLanguagePreference } from "./utils/validators";
-import type { CognitiveLevel, LanguageCode, SessionPayload } from "./types";
+import type {
+  CognitiveLevel,
+  LanguageCode,
+  OnboardingProfile,
+  OracleRequest,
+  OracleResponse,
+  SessionPayload
+} from "./types";
 
 const demoPrompts = [
   "I've never voted before. Where do I start?",
@@ -32,6 +47,32 @@ const demoNotes = [
   "This is the final confidence-building step."
 ];
 
+const addLocalCivicScore = (points: number) => {
+  const raw = window.localStorage.getItem("electra:civic-score");
+  let currentScore = 0;
+  let streakDays = 1;
+
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as { score?: number; streakDays?: number };
+      currentScore = parsed.score ?? 0;
+      streakDays = parsed.streakDays ?? 1;
+    } catch {
+      currentScore = 0;
+    }
+  }
+
+  window.localStorage.setItem(
+    "electra:civic-score",
+    JSON.stringify({
+      score: currentScore + points,
+      badges: [],
+      streakDays,
+      highestBadge: null
+    })
+  );
+};
+
 const App = () => {
   const pathname = window.location.pathname;
   const {
@@ -42,6 +83,7 @@ const App = () => {
     oracleHistory,
     cognitiveLevel,
     language,
+    profile,
     bookmarkedStates,
     completedJourneys,
     predictionHit,
@@ -52,6 +94,7 @@ const App = () => {
     setLanguage,
     setCognitiveLevel,
     applyOracleResponse,
+    completeOnboarding,
     toggleDemoMode,
     toggleDemoPaused
   } = useElectraStore();
@@ -60,6 +103,10 @@ const App = () => {
   const [userLabel, setUserLabel] = useState("Guest mode");
   const [busy, setBusy] = useState(false);
   const [demoIndex, setDemoIndex] = useState(0);
+  const [streamRequest, setStreamRequest] = useState<OracleRequest | null>(null);
+  const [streamPrompt, setStreamPrompt] = useState("");
+  const [streamToken, setStreamToken] = useState<string | null>(null);
+  useAdaptiveCopilot();
 
   useEffect(() => {
     void ensureAnonymousAuth();
@@ -85,30 +132,37 @@ const App = () => {
     return () => window.removeEventListener("keydown", handler);
   }, [demoMode, toggleDemoMode, toggleDemoPaused]);
 
-  const runOracle = useCallback(async (message: string) => {
+  const runOracle = useCallback(async (
+    message: string,
+    requestOverrides: Partial<Pick<OracleRequest, "language" | "cognitiveLevel">> = {}
+  ) => {
     setBusy(true);
     try {
       const token = await getCurrentUserToken();
-      const response = await requestOracle(
-        {
-          userMessage: message,
-          currentState,
-          history,
-          cognitiveLevel,
-          language
-        },
-        token
-      );
-      await preloadComponent(response.render);
-      if (history.length === 1) {
-        await trackJourneyStarted(journeyId, cognitiveLevel, language);
-      }
-      await trackStepCompleted(currentState, Date.now() - pauseStartedAt, false);
-      applyOracleResponse(message, response);
-    } finally {
+      const payload: OracleRequest = {
+        userMessage: message,
+        currentState,
+        history,
+        cognitiveLevel: requestOverrides.cognitiveLevel ?? cognitiveLevel,
+        language: requestOverrides.language ?? language,
+        sessionId: journeyId,
+        profile
+      };
+      civicEvents.oracleQueried(requestOverrides.cognitiveLevel ?? cognitiveLevel, currentState);
+      setStreamPrompt(message);
+      setStreamToken(token);
+      setStreamRequest(payload);
+    } catch {
       setBusy(false);
     }
-  }, [applyOracleResponse, cognitiveLevel, currentState, history, journeyId, language, pauseStartedAt]);
+  }, [
+    cognitiveLevel,
+    currentState,
+    history,
+    journeyId,
+    language,
+    profile
+  ]);
 
   useEffect(() => {
     if (!demoMode || demoPaused || demoIndex >= demoPrompts.length || busy) {
@@ -131,9 +185,15 @@ const App = () => {
   useEffect(() => {
     const tracker = buildPauseTracker(currentState, (stepId) => {
       void trackConfusionDetected(stepId, "long_pause");
+      civicBus.emit({
+        type: "CONFUSION_DETECTED",
+        payload: { stepId, level: 1 }
+      });
     });
     return () => window.clearTimeout(tracker);
   }, [currentState]);
+
+  useEffect(() => measureJourneyStepTime(currentState), [currentState]);
 
   useEffect(() => {
     const payload: SessionPayload = {
@@ -144,7 +204,8 @@ const App = () => {
       cognitiveLevel,
       language,
       bookmarkedStates,
-      completedJourneys
+      completedJourneys,
+      profile
     };
     void persistSession(userId, payload).catch(() => undefined);
   }, [
@@ -156,8 +217,57 @@ const App = () => {
     journeyId,
     language,
     oracleHistory,
+    profile,
     userId
   ]);
+
+  const handleOnboardingComplete = useCallback(async (nextProfile: OnboardingProfile) => {
+    completeOnboarding(nextProfile);
+    civicEvents.onboardingCompleted(nextProfile.toneMode, nextProfile.location);
+    addLocalCivicScore(50);
+    civicBus.emit({
+      type: "SCORE_EARNED",
+      payload: { points: 50, reason: "Complete onboarding" }
+    });
+    await persistOnboardingProfile(userId, nextProfile);
+  }, [completeOnboarding, userId]);
+
+  const handleStreamComplete = useCallback(async (response: OracleResponse) => {
+    await preloadComponent(response.render);
+    if (history.length === 1) {
+      await trackJourneyStarted(journeyId, cognitiveLevel, language);
+    }
+
+    const durationMs = Date.now() - pauseStartedAt;
+    await trackStepCompleted(currentState, durationMs, false);
+    civicEvents.journeyStepCompleted(currentState, Math.round(durationMs / 1000));
+    applyOracleResponse(streamPrompt, response);
+    await persistConversationTurn(userId, journeyId, {
+      prompt: streamPrompt,
+      response,
+      timestamp: new Date().toISOString(),
+      predictionHit
+    });
+
+    setStreamRequest(null);
+    setStreamPrompt("");
+    setBusy(false);
+  }, [
+    applyOracleResponse,
+    cognitiveLevel,
+    currentState,
+    history.length,
+    journeyId,
+    language,
+    pauseStartedAt,
+    predictionHit,
+    streamPrompt,
+    userId
+  ]);
+
+  const handleStreamError = useCallback(() => {
+    setBusy(false);
+  }, []);
 
   const handlePrimaryAction = useCallback(async () => {
     const actionText = draftSelection
@@ -179,12 +289,19 @@ const App = () => {
     setLanguage(nextLanguage);
     storeLanguagePreference(nextLanguage);
     await trackLanguageSwitched(previous, nextLanguage);
-    await runOracle("Please explain the same step in my chosen language.");
-  }, [language, setLanguage, runOracle]);
+    civicEvents.languageChanged(previous, nextLanguage);
+    if (profile) {
+      await persistOnboardingProfile(userId, {
+        ...profile,
+        preferredLanguage: nextLanguage
+      });
+    }
+    await runOracle("Please explain the same step in my chosen language.", { language: nextLanguage });
+  }, [language, profile, setLanguage, runOracle, userId]);
 
   const handleCognitiveLevelChange = useCallback(async (level: CognitiveLevel) => {
     setCognitiveLevel(level);
-    await runOracle("Please explain this same step at my chosen detail level.");
+    await runOracle("Please explain this same step at my chosen detail level.", { cognitiveLevel: level });
   }, [setCognitiveLevel, runOracle]);
 
   const demoAnnotation = useMemo(
@@ -194,6 +311,10 @@ const App = () => {
 
   if (pathname === "/admin") {
     return <AdminPanel />;
+  }
+
+  if (!profile) {
+    return <OnboardingEngine onComplete={handleOnboardingComplete} />;
   }
 
   return (
@@ -207,6 +328,10 @@ const App = () => {
         onLanguageChange={handleLanguageChange}
         onCognitiveLevelChange={handleCognitiveLevelChange}
         onSignIn={signInWithGoogle}
+        streamRequest={streamRequest}
+        streamToken={streamToken}
+        onStreamComplete={handleStreamComplete}
+        onStreamError={handleStreamError}
         demoAnnotation={predictionHit ? "Loaded instantly. Oracle predicted this." : demoAnnotation}
       />
     </div>

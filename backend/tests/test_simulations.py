@@ -1,72 +1,34 @@
-from __future__ import annotations
-
 from fastapi.testclient import TestClient
 
 from backend.main import app
 
 
-client = TestClient(app)
-
-
-def test_vote_count_simulation_returns_requested_number_of_precincts():
-    response = client.post(
-        "/api/simulate/vote-count",
-        json={
-            "region": "Test County",
-            "precincts": 4,
-            "totalVoters": 1200,
-            "turnoutPercent": 75,
-            "seedMargin": 4,
-        },
-    )
-
+def test_get_recount_thresholds():
+    client = TestClient(app)
+    response = client.get("/api/simulations/recount-thresholds")
     assert response.status_code == 200
-    payload = response.json()
-    assert len(payload["snapshots"]) == 4
-    assert all("candidateA" in snapshot for snapshot in payload["snapshots"])
+    assert "GA" in response.json()
 
 
-def test_recount_trigger_returns_margin_math():
-    response = client.post(
-        "/api/simulate/recount-trigger",
-        json={
-            "candidateAVotes": 1005,
-            "candidateBVotes": 1000,
-            "thresholdPercent": 1.0,
-        },
-    )
-
+def test_get_deadlines():
+    client = TestClient(app)
+    response = client.get("/api/simulations/deadlines?state=PA")
     assert response.status_code == 200
-    payload = response.json()
-    assert round(payload["marginPercent"], 2) == 0.25
-    assert payload["recountTriggered"] is True
-    assert payload["marginVotes"] == 5
+    assert response.json()["state"] == "PA"
+    assert response.json()["registration_days_prior"] == 15
 
 
-def test_polling_locations_fallback_returns_accessibility_fields():
-    response = client.get("/api/polling-locations", params={"address": "123 Main St"})
+def test_deadline_endpoint_requires_state_query_param():
+    client = TestClient(app)
+    response = client.get("/api/simulations/deadlines")
 
-    assert response.status_code == 200
-    location = response.json()["locations"][0]
-    assert location["accessible"] is True
-    assert "languages" in location
-    assert "parking" in location
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["loc"][-1] == "state"
 
 
-def test_session_endpoint_uses_memory_store_when_firestore_missing():
-    response = client.post(
-        "/api/session",
-        json={
-            "journeyId": "journey-1",
-            "currentState": "POLLING_FINDER",
-            "stateHistory": [],
-            "oracleHistory": [],
-            "cognitiveLevel": "simple",
-            "language": "en",
-            "bookmarkedStates": ["WELCOME"],
-            "completedJourneys": [],
-        },
-    )
+def test_simulation_opus_endpoints_are_not_registered_yet():
+    client = TestClient(app)
 
-    assert response.status_code == 200
-    assert response.json()["status"] == "memory"
+    assert client.post("/api/simulations/ballot-ingestion", json={}).status_code == 404
+    assert client.post("/api/simulations/tallying", json={"anomaly": True}).status_code == 404
+    assert client.post("/api/simulations/certification", json={}).status_code == 404

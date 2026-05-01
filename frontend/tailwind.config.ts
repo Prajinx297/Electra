@@ -1,27 +1,32 @@
-import type { Config } from "tailwindcss";
-
+/** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
   theme: {
     extend: {
       colors: {
-        ink: "var(--ink)",
-        paper: "var(--paper)",
-        "vote-red": "var(--vote-red)",
-        "civic-gold": "var(--civic-gold)",
-        "signal-green": "var(--signal-green)",
-        "neural-blue": "var(--neural-blue)",
-        muted: "var(--muted)"
+        bg: 'var(--bg)',
+        surface: 'var(--surface)',
+        'surface-2': 'var(--surface-2)',
+        ink: 'var(--ink)',
+        'ink-2': 'var(--ink-2)',
+        green: 'var(--green)',
+        'green-light': 'var(--green-light)',
+        amber: 'var(--amber)',
+        'amber-light': 'var(--amber-light)',
+        red: 'var(--red)',
+        'red-light': 'var(--red-light)',
+        blue: 'var(--blue)',
+        'blue-light': 'var(--blue-light)',
+        border: 'var(--border)',
       },
       fontFamily: {
-        display: ["'Playfair Display'", "serif"],
-        body: ["'Libre Franklin'", "sans-serif"],
-        mono: ["'JetBrains Mono'", "monospace"]
-      },
-      boxShadow: {
-        civic: "0 24px 60px rgba(0, 0, 0, 0.28)"
+        sans: ['Nunito', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       }
-    }
+    },
   },
-  plugins: []
-} satisfies Config;
+  plugins: [],
+}

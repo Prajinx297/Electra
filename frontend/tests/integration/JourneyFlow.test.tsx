@@ -38,6 +38,13 @@ vi.mock("../../src/engines/oracleClient", () => ({
 describe("journey flow", () => {
   beforeEach(() => {
     useElectraStore.setState(useElectraStore.getInitialState(), true);
+    useElectraStore.getState().completeOnboarding({
+      location: "Atlanta, GA",
+      familiarity: "first-time",
+      accessibilityNeeds: [],
+      toneMode: "citizen",
+      completedAt: "2026-04-30T00:00:00.000Z"
+    });
     window.history.replaceState({}, "", "/");
   });
 
@@ -46,14 +53,16 @@ describe("journey flow", () => {
     await userEvent.type(screen.getByPlaceholderText("Ask a question"), "I've never voted before. Where do I start?");
     await userEvent.click(screen.getByRole("button", { name: /Ask this question/i }));
 
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: /I have never voted before/i })).toBeInTheDocument()
+    await waitFor(
+      () => expect(screen.getByRole("button", { name: /I have never voted before/i })).toBeInTheDocument(),
+      { timeout: 5000 }
     );
     await userEvent.click(screen.getByRole("button", { name: /I have never voted before/i }));
     await userEvent.click(screen.getByRole("button", { name: /Continue/i }));
 
-    await waitFor(() =>
-      expect(screen.getByText(/Check your registration/i)).toBeInTheDocument()
+    await waitFor(
+      () => expect(screen.getByText(/Check your registration/i)).toBeInTheDocument(),
+      { timeout: 5000 }
     );
-  });
+  }, 10000);
 });

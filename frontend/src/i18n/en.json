@@ -1,18 +1,22 @@
 {
-  "appTitle": "ELECTRA",
-  "guestMode": "Guest mode",
-  "signedInAs": "Signed in as",
-  "keepGoing": "Keep going",
-  "goBack": "Go back",
-  "tellMeMore": "Tell me more",
-  "language": "Language",
-  "simple": "Simple",
-  "normal": "Normal",
-  "detailed": "Detailed",
-  "accessibleOnly": "Accessible locations only",
-  "addToCalendar": "Add to calendar",
-  "directions": "Directions",
-  "whatThisMeans": "What this means for you",
-  "oneStepAtATime": "One step at a time",
-  "confusionHeatmap": "Confusion heatmap"
+  "app": {
+    "title": "ELECTRA",
+    "subtitle": "Civic Intelligence OS",
+    "demo_mode": "Demo Mode Active"
+  },
+  "oracle": {
+    "input_placeholder": "Type your response here...",
+    "send_button": "Send"
+  },
+  "settings": {
+    "language": "Language",
+    "cognitive_level": "Detail Level",
+    "level_simple": "Simple",
+    "level_normal": "Normal",
+    "level_detailed": "Detailed"
+  },
+  "journey": {
+    "history": "Journey History",
+    "rewind_prompt": "Rewind to this step"
+  }
 }

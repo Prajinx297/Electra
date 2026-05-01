@@ -1,20 +1,103 @@
-import { doc, getFirestore, setDoc } from "firebase/firestore";
-import { initializeApp, getApps } from "firebase/app";
-import { firebaseConfig } from "./config";
-import type { SessionPayload } from "../types";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+  type FirestoreDataConverter,
+  type QueryDocumentSnapshot,
+  type SnapshotOptions
+} from "firebase/firestore";
+import { db } from "./config";
+import type {
+  AuditResult,
+  BallotEvent,
+  OnboardingProfile,
+  OracleHistoryEntry,
+  SessionPayload,
+  TallyResult,
+  CertificationEvent
+} from "../types";
 
-const hasFirebaseConfig = Boolean(
-  firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId
-);
-const app = hasFirebaseConfig ? getApps()[0] ?? initializeApp(firebaseConfig) : null;
-const db = app ? getFirestore(app) : null;
+interface StoredSession extends SessionPayload {
+  updatedAt?: unknown;
+}
 
-export const persistSession = async (userId: string, payload: SessionPayload) => {
-  if (!db) {
-    return;
-  }
-  const ref = doc(db, "users", userId, "sessions", payload.journeyId);
-  await setDoc(ref, payload, { merge: true });
+interface OutdatedFlag {
+  sessionId: string;
+  sourceId: string;
+  reason: string;
+  createdAt?: unknown;
+}
+
+interface SimulationSnapshot {
+  ballotEvent: BallotEvent | null;
+  tally: TallyResult | null;
+  certification: CertificationEvent | null;
+  audit: AuditResult | null;
+  completedAt: string;
+  updatedAt?: unknown;
+}
+
+const sessionConverter: FirestoreDataConverter<StoredSession> = {
+  toFirestore: (session) => session,
+  fromFirestore: (
+    snapshot: QueryDocumentSnapshot,
+    options: SnapshotOptions
+  ) => snapshot.data(options) as StoredSession
 };
 
-export { db };
+export const persistSession = async (userId: string, payload: SessionPayload) => {
+  await setDoc(
+    doc(db, "sessions", userId).withConverter(sessionConverter),
+    { ...payload, updatedAt: serverTimestamp() },
+    { merge: true }
+  );
+};
+
+export const loadSession = async (userId: string) => {
+  const snapshot = await getDoc(doc(db, "sessions", userId).withConverter(sessionConverter));
+  return snapshot.exists() ? snapshot.data() : null;
+};
+
+export const persistConversationTurn = async (
+  userId: string,
+  sessionId: string,
+  entry: OracleHistoryEntry
+) => {
+  await addDoc(collection(db, "sessions", userId, "conversations"), {
+    ...entry,
+    sessionId,
+    createdAt: serverTimestamp()
+  });
+};
+
+export const persistOnboardingProfile = async (
+  userId: string,
+  profile: OnboardingProfile
+) => {
+  await setDoc(
+    doc(db, "onboardingProfiles", userId),
+    { ...profile, updatedAt: serverTimestamp() },
+    { merge: true }
+  );
+};
+
+export const flagSourceAsOutdated = async (flag: OutdatedFlag) => {
+  await addDoc(collection(db, "reviewQueue"), {
+    ...flag,
+    createdAt: serverTimestamp()
+  });
+};
+
+export const persistSimulationState = async (
+  sessionId: string,
+  snapshot: SimulationSnapshot
+) => {
+  await setDoc(
+    doc(db, "simulationRuns", sessionId),
+    { ...snapshot, updatedAt: serverTimestamp() },
+    { merge: true }
+  );
+};

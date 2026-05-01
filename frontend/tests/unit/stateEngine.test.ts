@@ -17,6 +17,20 @@ describe("state engine", () => {
     expect(JOURNEY_STATES.length).toBeGreaterThanOrEqual(45);
   });
 
+  it("creates the expected initial state shape", () => {
+    const state = useElectraStore.getState();
+
+    expect(state.currentState).toBe("WELCOME");
+    expect(state.history[0]).toEqual(expect.objectContaining({ state: "WELCOME", decision: "Started" }));
+    expect(state.currentResponse).toEqual(
+      expect.objectContaining({
+        message: expect.any(String),
+        primaryAction: expect.objectContaining({ label: "Start" })
+      })
+    );
+    expect(state.stuckInterventionVisible).toBe(false);
+  });
+
   it("allows every declared transition", () => {
     JOURNEY_STATES.forEach((state) => {
       JOURNEY_GRAPH[state].allowedTransitions.forEach((next) => {
@@ -29,6 +43,24 @@ describe("state engine", () => {
   it("blocks skipping required states", () => {
     expect(canTransition("WELCOME", "COUNTING_EXPLAINED")).toBe(false);
     expect(resolveNextState("WELCOME", "COUNTING_EXPLAINED")).toBe("WELCOME");
+  });
+
+  it("rejects invalid oracle state transitions gracefully", () => {
+    useElectraStore.getState().applyOracleResponse("bad skip", {
+      message: "Jump ahead.",
+      tone: "warning",
+      render: "DecisionCard",
+      renderProps: {},
+      primaryAction: { label: "Continue", action: "continue" },
+      secondaryAction: null,
+      progress: { step: 7, total: 7, label: "Skipped" },
+      proactiveWarning: null,
+      stateTransition: "COMPLETE",
+      cognitiveLevel: "citizen",
+      nextAnticipated: null
+    });
+
+    expect(useElectraStore.getState().currentState).toBe("WELCOME");
   });
 
   it("exposes recovery paths from error states", () => {
@@ -53,6 +85,27 @@ describe("state engine", () => {
 
     useElectraStore.getState().rewindToState("WELCOME");
     expect(useElectraStore.getState().currentState).toBe("WELCOME");
+  });
+
+  it("detects journey completion and records completed journeys", () => {
+    useElectraStore.setState({ currentState: "RECOUNT_TRIGGER", predictedRender: "DecisionCard" });
+
+    useElectraStore.getState().applyOracleResponse("finish", {
+      message: "You are ready.",
+      tone: "celebratory",
+      render: "JourneySummary",
+      renderProps: {},
+      primaryAction: { label: "Restart", action: "restart" },
+      secondaryAction: null,
+      progress: { step: 7, total: 7, label: "Complete" },
+      proactiveWarning: null,
+      stateTransition: "COMPLETE",
+      cognitiveLevel: "citizen",
+      nextAnticipated: "WelcomeStep"
+    });
+
+    expect(useElectraStore.getState().currentState).toBe("COMPLETE");
+    expect(useElectraStore.getState().completedJourneys).toContain("finish");
   });
 
   it("builds a history entry with rewind support", () => {

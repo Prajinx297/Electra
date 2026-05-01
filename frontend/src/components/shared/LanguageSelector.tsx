@@ -6,19 +6,33 @@ interface LanguageSelectorProps {
   onChange: (value: LanguageCode) => void;
 }
 
+const options: Array<[LanguageCode, string]> = [
+  ["en", "EN"],
+  ["es", "ES"],
+  ["fr", "FR"]
+];
+
 export const LanguageSelector = ({ value, onChange }: LanguageSelectorProps) => (
-  <label className="flex min-h-12 items-center gap-2 text-sm text-[var(--ink)]">
-    <span>{getCopy(value, "language")}</span>
-    <select
-      className="min-h-12 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4"
-      value={value}
-      onChange={(event) => onChange(event.target.value as LanguageCode)}
-      aria-label="Language"
-    >
-      <option value="en">English</option>
-      <option value="es">Español</option>
-      <option value="fr">Français</option>
-      <option value="en-simple">Simplified English</option>
-    </select>
-  </label>
+  <div
+    className="flex min-h-12 items-center gap-1 rounded-lg border border-[var(--border)] p-1 text-sm text-[var(--ink)]"
+    role="group"
+    aria-label={getCopy(value, "language")}
+  >
+    {options.map(([language, label]) => {
+      const pressed = value === language || (value === "en-simple" && language === "en");
+      return (
+        <button
+          key={language}
+          type="button"
+          aria-pressed={pressed}
+          onClick={() => onChange(language)}
+          className={`min-h-10 rounded-md px-3 text-sm font-bold ${
+            pressed ? "bg-[var(--civic-green)] text-white" : "text-[var(--ink)]"
+          }`}
+        >
+          {label}
+        </button>
+      );
+    })}
+  </div>
 );

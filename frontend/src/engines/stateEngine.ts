@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { predictNextRender, scorePrediction } from "./predictionEngine";
+import { civicBus } from "../events/civicEventBus";
 import type {
   CognitiveLevel,
   HistoryEntry,
@@ -7,6 +8,7 @@ import type {
   JourneyNode,
   JourneyState,
   LanguageCode,
+  OnboardingProfile,
   OracleHistoryEntry,
   OracleResponse,
   RenderKey,
@@ -101,6 +103,9 @@ export interface ElectraStoreState {
   language: LanguageCode;
   bookmarkedStates: JourneyState[];
   completedJourneys: string[];
+  profile: OnboardingProfile | null;
+  backClickCount: number;
+  stuckInterventionVisible: boolean;
   pauseStartedAt: number;
   demoMode: boolean;
   demoPaused: boolean;
@@ -109,6 +114,9 @@ export interface ElectraStoreState {
   setDraftSelection: (value: string | null) => void;
   applyOracleResponse: (prompt: string, response: OracleResponse) => void;
   rewindToState: (state: JourneyState) => void;
+  showStuckIntervention: () => void;
+  dismissStuckIntervention: () => void;
+  completeOnboarding: (profile: OnboardingProfile) => void;
   toggleDemoMode: () => void;
   toggleDemoPaused: () => void;
   bookmarkState: (state: JourneyState) => void;
@@ -160,7 +168,7 @@ export const buildHistoryEntry = (
 export const resolveNextState = (from: JourneyState, to: JourneyState): JourneyState =>
   canTransition(from, to) ? to : from;
 
-export const useElectraStore = create<ElectraStoreState>((set, get) => {
+export const useElectraStore = create<ElectraStoreState>((set) => {
   const initialResponse = createInitialResponse();
   return {
     journeyId: crypto.randomUUID(),
@@ -177,6 +185,9 @@ export const useElectraStore = create<ElectraStoreState>((set, get) => {
     language: readLanguagePreference(),
     bookmarkedStates: [],
     completedJourneys: [],
+    profile: null,
+    backClickCount: 0,
+    stuckInterventionVisible: false,
     pauseStartedAt: Date.now(),
     demoMode: false,
     demoPaused: false,
@@ -187,6 +198,13 @@ export const useElectraStore = create<ElectraStoreState>((set, get) => {
       set((state) => {
         const nextState = resolveNextState(state.currentState, response.stateTransition);
         const prediction = scorePrediction(state.predictedRender, response.render).hit;
+        civicBus.emit({
+          type: "STEP_COMPLETED",
+          payload: {
+            stepId: nextState,
+            duration: Date.now() - state.pauseStartedAt
+          }
+        });
         const completedJourneys =
           nextState === "COMPLETE"
             ? Array.from(new Set([...state.completedJourneys, prompt]))
@@ -211,6 +229,7 @@ export const useElectraStore = create<ElectraStoreState>((set, get) => {
           draftSelection: null,
           cognitiveLevel: response.cognitiveLevel,
           completedJourneys,
+          stuckInterventionVisible: false,
           pauseStartedAt: Date.now()
         };
       }),
@@ -241,8 +260,18 @@ export const useElectraStore = create<ElectraStoreState>((set, get) => {
           currentRenderProps: response.renderProps,
           currentResponse: response,
           history: [...state.history, buildHistoryEntry(targetState, "Rewound", response, true)],
+          backClickCount: state.backClickCount + 1,
+          cognitiveLevel: state.backClickCount + 1 >= 2 ? "five-year-old" : state.cognitiveLevel,
           pauseStartedAt: Date.now()
         };
+      }),
+    showStuckIntervention: () => set({ stuckInterventionVisible: true }),
+    dismissStuckIntervention: () => set({ stuckInterventionVisible: false }),
+    completeOnboarding: (profile) =>
+      set({
+        profile,
+        cognitiveLevel: profile.toneMode,
+        currentState: "GOAL_SELECT"
       }),
     toggleDemoMode: () => set((state) => ({ demoMode: !state.demoMode })),
     toggleDemoPaused: () => set((state) => ({ demoPaused: !state.demoPaused })),

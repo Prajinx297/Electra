@@ -5,6 +5,8 @@ import { useElectraStore } from "../../src/engines/stateEngine";
 import { persistSession } from "../../src/firebase/firestore";
 
 vi.mock("../../src/firebase/firestore", () => ({
+  persistConversationTurn: vi.fn().mockResolvedValue(undefined),
+  persistOnboardingProfile: vi.fn().mockResolvedValue(undefined),
   persistSession: vi.fn().mockResolvedValue(undefined)
 }));
 

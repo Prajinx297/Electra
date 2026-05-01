@@ -1,53 +1,77 @@
+import { useEffect, useRef } from "react";
 import { trackEvent } from "../firebase/analytics";
-
-export const trackJourneyStarted = async (
-  journeyId: string,
-  cognitiveLevel: string,
-  language: string
-) =>
-  trackEvent("journey_started", {
-    journeyId,
-    cognitiveLevel,
-    language
-  });
-
-export const trackStepCompleted = async (
-  stepId: string,
-  timeSpent: number,
-  rewound: boolean
-) =>
-  trackEvent("step_completed", {
-    stepId,
-    timeSpent,
-    rewound
-  });
-
-export const trackConfusionDetected = async (
-  stepId: string,
-  signal: "long_pause" | "reread" | "back"
-) =>
-  trackEvent("confusion_detected", {
-    stepId,
-    signal
-  });
-
-export const trackSimulationInteracted = async (
-  simulationId: string,
-  parametersSet: string
-) =>
-  trackEvent("simulation_interacted", {
-    simulationId,
-    parametersSet
-  });
-
-export const trackLanguageSwitched = async (from: string, to: string) =>
-  trackEvent("language_switched", {
-    from,
-    to
-  });
+import type { CognitiveLevel, JourneyState, LanguageCode } from "../types";
 
 export const buildPauseTracker = (
+  stepId: JourneyState | string,
+  onPause: (stepId: string) => void,
+  thresholdMs = 30000
+) => window.setTimeout(() => onPause(stepId), thresholdMs);
+
+export const trackJourneyStarted = (
+  journeyId: string,
+  cognitiveLevel: CognitiveLevel,
+  language: LanguageCode
+) => trackEvent("journey_started", { journeyId, cognitiveLevel, language });
+
+export const trackStepCompleted = (
   stepId: string,
-  onDetected: (stepId: string) => void,
-  timeoutMs = 10_000
-) => window.setTimeout(() => onDetected(stepId), timeoutMs);
+  durationMs: number,
+  usedRewind: boolean
+) => trackEvent("step_completed", { stepId, durationMs, usedRewind });
+
+export const trackConfusionDetected = (stepId: string, reason: string) =>
+  trackEvent("confusion_detected", { stepId, reason });
+
+export const trackSimulationInteracted = (simulationId: string, detail: string) =>
+  trackEvent("simulation_interacted", { simulationId, detail });
+
+export const trackLanguageSwitched = (from: LanguageCode, to: LanguageCode) =>
+  trackEvent("language_switched", { from, to });
+
+export const useConfusionTimer = (stepId: string) => {
+  const mountTime = useRef(Date.now());
+
+  useEffect(() => {
+    mountTime.current = Date.now();
+    return () => {
+      const timeSpent = Math.round((Date.now() - mountTime.current) / 1000);
+      if (timeSpent > 0) {
+        void trackEvent("confusion_time_spent", { stepId, seconds: timeSpent });
+      }
+    };
+  }, [stepId]);
+};
+
+export const useOracleScrollTracker = (stepId: string) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const hasScrolledAway = useRef(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) {
+          hasScrolledAway.current = true;
+          return;
+        }
+        if (hasScrolledAway.current) {
+          void trackEvent("oracle_reread", { stepId });
+          hasScrolledAway.current = false;
+        }
+      });
+    }, { threshold: 0.5 });
+
+    const current = ref.current;
+    if (current) {
+      observer.observe(current);
+    }
+
+    return () => {
+      if (current) {
+        observer.unobserve(current);
+      }
+    };
+  }, [stepId]);
+
+  return ref;
+};

@@ -1,50 +1,26 @@
-import { initializeApp, getApps } from "firebase/app";
-import {
-  GoogleAuthProvider,
-  getAuth,
-  linkWithPopup,
-  onAuthStateChanged,
-  signInAnonymously,
-  signInWithPopup,
-  type User
-} from "firebase/auth";
-import { firebaseConfig } from "./config";
+import { signInAnonymously, onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
+import { auth } from "./config";
 
-const hasFirebaseConfig = Boolean(
-  firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId
-);
-const app = hasFirebaseConfig ? getApps()[0] ?? initializeApp(firebaseConfig) : null;
-const auth = app ? getAuth(app) : null;
-const googleProvider = new GoogleAuthProvider();
-
-export const ensureAnonymousAuth = async () => {
-  if (!auth) {
-    return null;
-  }
-  if (!auth.currentUser) {
-    await signInAnonymously(auth);
-  }
-  return auth.currentUser;
+export const ensureAnonymousAuth = async (): Promise<User> => {
+  if (auth.currentUser) return auth.currentUser;
+  const cred = await signInAnonymously(auth);
+  return cred.user;
 };
 
-export const signInWithGoogle = async () => {
-  if (!auth) {
-    return null;
-  }
-  if (auth.currentUser?.isAnonymous) {
-    return linkWithPopup(auth.currentUser, googleProvider);
-  }
-  return signInWithPopup(auth, googleProvider);
+export const subscribeToAuth = (callback: (user: User | null) => void) => {
+  return onAuthStateChanged(auth, callback);
 };
 
-export const subscribeToAuth = (callback: (user: User | null) => void) =>
-  auth
-    ? onAuthStateChanged(auth, callback)
-    : (() => {
-        callback(null);
-        return () => undefined;
-      })();
+export const loginWithGoogle = async () => {
+  const provider = new GoogleAuthProvider();
+  return signInWithPopup(auth, provider);
+};
 
-export const getCurrentUserToken = async () => auth?.currentUser?.getIdToken();
+export const signInWithGoogle = loginWithGoogle;
 
-export { auth };
+export const logoutUser = () => signOut(auth);
+
+export const getCurrentUserToken = async (): Promise<string | null> => {
+  if (!auth.currentUser) return null;
+  return auth.currentUser.getIdToken();
+};
