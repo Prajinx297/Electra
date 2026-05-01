@@ -30,12 +30,12 @@ def test_health_firebase_endpoint_returns_connectivity_status():
     assert "firebase" in response.json()
 
 
-def test_health_claude_endpoint_returns_observability_status():
+def test_health_gemini_endpoint_returns_observability_status():
     client = TestClient(app)
-    response = client.get("/health/claude")
+    response = client.get("/health/gemini")
 
     assert response.status_code in {200, 503}
-    assert "claude" in response.json()
+    assert "gemini" in response.json()
 
 
 def test_health_firebase_success_branch(monkeypatch):
@@ -48,7 +48,7 @@ def test_health_firebase_success_branch(monkeypatch):
     assert response.json() == {"firebase": "connected", "app_name": "[DEFAULT]"}
 
 
-def test_health_claude_success_branch(monkeypatch):
+def test_health_gemini_success_branch(monkeypatch):
     class Messages:
         async def create(self, **_kwargs):
             return SimpleNamespace()
@@ -62,16 +62,16 @@ def test_health_claude_success_branch(monkeypatch):
     monkeypatch.setattr(main, "AsyncAnthropic", FakeAnthropic)
     client = TestClient(app)
 
-    response = client.get("/health/claude")
+    response = client.get("/health/gemini")
 
     assert response.status_code == 200
-    assert response.json() == {"claude": "ready"}
+    assert response.json() == {"gemini": "ready"}
 
 
-def test_health_claude_error_branch(monkeypatch):
+def test_health_gemini_error_branch(monkeypatch):
     class Messages:
         async def create(self, **_kwargs):
-            raise RuntimeError("claude down")
+            raise RuntimeError("gemini down")
 
     class FakeAnthropic:
         def __init__(self, api_key: str):
@@ -82,7 +82,7 @@ def test_health_claude_error_branch(monkeypatch):
     monkeypatch.setattr(main, "AsyncAnthropic", FakeAnthropic)
     client = TestClient(app)
 
-    response = client.get("/health/claude")
+    response = client.get("/health/gemini")
 
     assert response.status_code == 503
-    assert response.json()["claude"] == "error"
+    assert response.json()["gemini"] == "error"

@@ -23,7 +23,7 @@ dynamically controls which React components are rendered in real time.
 graph TD
     User([User]) -->|Input| OP[OraclePanel]
     OP -->|POST /api/oracle| FA[FastAPI]
-    FA -->|Prompt + State| CA[Claude API]
+    FA -->|Prompt + State| CA[Gemini API]
     CA -->|Structured JSON| FA
     FA -->|Response| OP
     OP -->|Render Key| CR[ComponentRegistry]

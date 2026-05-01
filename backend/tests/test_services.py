@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 import backend.services.firebase_admin as firebase_service
-from backend.services.claude_service import GeminiOracleService
+from backend.services.gemini_service import GeminiOracleService
 from backend.services.sanitizer import sanitize_user_input, strip_html, strip_pii
 
 
@@ -20,7 +20,7 @@ def test_sanitizer_strips_html_pii_and_prompt_injection():
 
 
 @pytest.mark.asyncio
-async def test_claude_service_uses_mock_response_without_api_key(monkeypatch):
+async def test_gemini_service_uses_mock_response_without_api_key(monkeypatch):
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     service = GeminiOracleService()
 
@@ -38,7 +38,7 @@ async def test_claude_service_uses_mock_response_without_api_key(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_claude_service_parses_json_response(monkeypatch):
+async def test_gemini_service_parses_json_response(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     payload = {
         "message": "Listo.",
@@ -60,7 +60,7 @@ async def test_claude_service_parses_json_response(monkeypatch):
             assert "Respond entirely in Spanish" in prompt
             return SimpleNamespace(text=json.dumps(payload))
 
-    service = ClaudeOracleService()
+    service = geminiOracleService()
     service.model = MockModel()
 
     response = await service.generate(
@@ -75,7 +75,7 @@ async def test_claude_service_parses_json_response(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_claude_service_parses_plain_markdown_fence(monkeypatch):
+async def test_gemini_service_parses_plain_markdown_fence(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     payload = {
         "message": "Pret.",
@@ -97,7 +97,7 @@ async def test_claude_service_parses_plain_markdown_fence(monkeypatch):
             assert "Respond entirely in French" in prompt
             return SimpleNamespace(text=json.dumps(payload))
 
-    service = ClaudeOracleService()
+    service = geminiOracleService()
     service.model = MockModel()
 
     response = await service.generate(
@@ -112,7 +112,7 @@ async def test_claude_service_parses_plain_markdown_fence(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_claude_service_recovers_from_client_error(monkeypatch):
+async def test_gemini_service_recovers_from_client_error(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
 
     class MockModel:

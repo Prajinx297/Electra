@@ -119,7 +119,7 @@ def test_malformed_request_body_returns_422_with_readable_error():
 
 def test_oracle_service_timeout_is_handled_gracefully(monkeypatch):
     async def timeout_generate(**_kwargs):
-        raise TimeoutError("Claude timed out")
+        raise TimeoutError("gemini timed out")
 
     monkeypatch.setattr("backend.routes.oracle.oracle_service.generate", timeout_generate)
     client = make_client("oracle-timeout")
@@ -130,7 +130,7 @@ def test_oracle_service_timeout_is_handled_gracefully(monkeypatch):
     })
 
     assert response.status_code == 500
-    assert "Claude timed out" in response.json()["detail"]
+    assert "gemini timed out" in response.json()["detail"]
 
 
 def test_unauthenticated_oracle_request_currently_uses_guest_mode_contract():
