@@ -13,29 +13,27 @@ RUN npm run build
 
 # Stage 2: Build the FastAPI backend
 FROM python:3.12-slim
-WORKDIR /app
+WORKDIR /app/backend
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8080
-# During production, we will serve static files from the same origin, so CORS is not the primary mechanism,
-# but we allow * for API endpoints if accessed directly, or specific if needed.
-ENV FRONTEND_ORIGIN="*"
+ENV ENVIRONMENT="production"
 
 # Install system dependencies if any needed
 RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies
-COPY backend/requirements.txt ./backend/
-RUN pip install --no-cache-dir -r backend/requirements.txt
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend source
-COPY backend ./backend
+COPY backend .
 
-# Copy frontend build from stage 1 to a public folder
-COPY --from=frontend-builder /app/frontend/dist ./public
+# Copy frontend build from stage 1 to a public folder accessible by the backend
+COPY --from=frontend-builder /app/frontend/dist /app/backend/public
 
-# Expose port and run the FastAPI app
+# Expose port and run the FastAPI app from within backend/
 EXPOSE 8080
-CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]

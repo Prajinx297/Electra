@@ -3,8 +3,6 @@ import os
 import logging
 from typing import Any, Dict, List
 
-from core.result import Result, Ok, Error
-
 import google.generativeai as genai
 
 from services.sanitizer import sanitize_user_input
