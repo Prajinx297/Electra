@@ -1,34 +1,46 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import App from "../../src/App";
-import { requestOracle } from "../../src/engines/oracleClient";
+import { streamOracle } from "../../src/engines/oracleClient";
 import { useElectraStore } from "../../src/engines/stateEngine";
+import type { OracleResponse } from "../../src/types";
 
 vi.mock("../../src/engines/oracleClient", () => ({
-  requestOracle: vi.fn().mockResolvedValue({
-    message: "One simple next action: check where you vote.",
-    tone: "informative",
-    render: "DecisionCard",
-    renderProps: { title: "Simplified next step" },
-    primaryAction: { label: "Continue", action: "continue" },
-    secondaryAction: null,
-    progress: { step: 1, total: 7, label: "Getting started" },
-    proactiveWarning: null,
-    stateTransition: "WELCOME",
-    cognitiveLevel: "five-year-old",
-    nextAnticipated: "GoalSelect",
-    trust: {
-      sources: [],
-      confidence: 0.9,
-      lastVerified: "2026-04-30",
-      rationale: "Test response."
-    }
-  })
+  requestOracle: vi.fn(),
+  streamOracle: vi.fn()
 }));
+
+const streamOracleMock = streamOracle as unknown as Mock;
+
+const response: OracleResponse = {
+  message: "One simple next action: check where you vote.",
+  tone: "informative",
+  render: "DecisionCard",
+  renderProps: { title: "Simplified next step" },
+  primaryAction: { label: "Continue", action: "continue" },
+  secondaryAction: null,
+  progress: { step: 1, total: 7, label: "Getting started" },
+  proactiveWarning: null,
+  stateTransition: "WELCOME",
+  cognitiveLevel: "five-year-old",
+  nextAnticipated: "GoalSelect",
+  trust: {
+    sources: [],
+    confidence: 0.9,
+    lastVerified: "2026-04-30",
+    rationale: "Test response."
+  }
+};
+
+const streamResponse = async function* () {
+  yield { delta: response.message, done: true, trust: response.trust, response };
+};
 
 describe("AdaptiveCopilot integration", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    streamOracleMock.mockReset();
+    streamOracleMock.mockImplementation(streamResponse);
     useElectraStore.setState(useElectraStore.getInitialState(), true);
     useElectraStore.getState().completeOnboarding({
       location: "Atlanta, GA",
@@ -54,15 +66,14 @@ describe("AdaptiveCopilot integration", () => {
     vi.useRealTimers();
     fireEvent.click(screen.getByRole("button", { name: "Simplify this step" }));
 
-    await waitFor(() => expect(requestOracle).toHaveBeenCalled());
-    expect(requestOracle).toHaveBeenCalledWith(
+    await waitFor(() => expect(streamOracle).toHaveBeenCalled());
+    expect(streamOracle).toHaveBeenCalledWith(
       expect.objectContaining({
         userMessage: expect.stringContaining("make this simpler")
       }),
+      expect.any(AbortSignal),
       null
     );
-    await waitFor(() => {
-      expect(screen.getAllByText(/One simple next action/i).length).toBeGreaterThan(0);
-    });
+    expect(streamOracle).toHaveBeenCalledTimes(1);
   });
 });

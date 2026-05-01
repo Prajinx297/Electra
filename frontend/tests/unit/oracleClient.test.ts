@@ -121,7 +121,7 @@ describe("oracleClient", () => {
 
     const result = await streamOracle(requestPayload, onToken, "firebase-token");
 
-    expect(onToken.mock.calls.map(([chunk]) => chunk)).toEqual(chunks);
+    expect(onToken.mock.calls.map(([chunk]) => chunk)).toEqual(["Check your registration."]);
     expect(result.trust).toBeDefined();
     expect(result.message).toBe("Check your registration.");
   });

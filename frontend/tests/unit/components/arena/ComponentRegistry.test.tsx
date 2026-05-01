@@ -1,10 +1,30 @@
 import { describe, expect, it } from "vitest";
 import { getComponent, preloadComponent } from "../../../../src/components/arena/ComponentRegistry";
+import type { RenderKey } from "../../../../src/types";
+
+const renderKeys: RenderKey[] = [
+  "WelcomeStep",
+  "GoalSelect",
+  "DecisionCard",
+  "RegistrationChecker",
+  "DeadlineCalculator",
+  "IDChecker",
+  "PollingFinder",
+  "BallotWalkthrough",
+  "VoteCounter",
+  "ConsequenceTree",
+  "AccessibilitySupport",
+  "JourneySummary",
+  "StatusSummary",
+  "JourneyGraph"
+];
 
 describe("ComponentRegistry", () => {
   it("returns lazy components and preloads known render keys", async () => {
-    expect(getComponent("WelcomeStep")).toBeDefined();
-    await expect(preloadComponent("WelcomeStep")).resolves.toHaveProperty("default");
+    for (const key of renderKeys) {
+      expect(getComponent(key)).toBeDefined();
+      await expect(preloadComponent(key)).resolves.toHaveProperty("default");
+    }
     await expect(preloadComponent(null)).resolves.toBeUndefined();
   });
 });

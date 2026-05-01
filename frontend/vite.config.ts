@@ -18,10 +18,10 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-firebase': [
-            'firebase/app',
-            'firebase/auth',
-            'firebase/firestore',
+          'vendor-firebase-core': ['firebase/app'],
+          'vendor-firebase-auth': ['firebase/auth', 'firebase/app-check'],
+          'vendor-firebase-data': ['firebase/firestore'],
+          'vendor-firebase-observability': [
             'firebase/analytics',
             'firebase/performance',
             'firebase/remote-config'
@@ -43,8 +43,6 @@ export default defineConfig({
             'd3-zoom'
           ],
           'vendor-maps': ['@react-google-maps/api'],
-          'vendor-anthropic': ['@anthropic-ai/sdk'],
-          'vendor-zod': ['zod'],
         }
       }
     },

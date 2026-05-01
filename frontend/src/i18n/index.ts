@@ -2,6 +2,25 @@ import type { LanguageCode, TranslationDictionary } from "../types";
 import { esLocale } from "./locales/es";
 import { frLocale } from "./locales/fr";
 
+const toDictionary = (locale: TranslationDictionary): TranslationDictionary => ({
+  appTitle: locale.appTitle,
+  guestMode: locale.guestMode,
+  signedInAs: locale.signedInAs,
+  keepGoing: locale.keepGoing,
+  goBack: locale.goBack,
+  tellMeMore: locale.tellMeMore,
+  language: locale.language,
+  simple: locale.simple,
+  normal: locale.normal,
+  detailed: locale.detailed,
+  accessibleOnly: locale.accessibleOnly,
+  addToCalendar: locale.addToCalendar,
+  directions: locale.directions,
+  whatThisMeans: locale.whatThisMeans,
+  oneStepAtATime: locale.oneStepAtATime,
+  confusionHeatmap: locale.confusionHeatmap
+});
+
 const en: TranslationDictionary = {
   appTitle: "ELECTRA",
   guestMode: "Guest mode",
@@ -21,7 +40,7 @@ const en: TranslationDictionary = {
   confusionHeatmap: "Confusion heatmap"
 };
 
-const es: TranslationDictionary = esLocale;
+const es: TranslationDictionary = toDictionary(esLocale);
 
 const enSimple: TranslationDictionary = {
   ...en,
@@ -30,7 +49,7 @@ const enSimple: TranslationDictionary = {
   oneStepAtATime: "One small step"
 };
 
-const fr: TranslationDictionary = frLocale;
+const fr: TranslationDictionary = toDictionary(frLocale);
 
 export const translations: Record<LanguageCode, TranslationDictionary> = {
   en,

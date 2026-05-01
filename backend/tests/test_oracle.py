@@ -1,7 +1,10 @@
 from fastapi.testclient import TestClient
+import json
+import pytest
 from pydantic import BaseModel, Field
 
 from backend.main import app
+from backend.services.rate_limit import limiter
 
 
 class TrustMetadata(BaseModel):
@@ -20,7 +23,13 @@ class OracleResponseSchema(BaseModel):
 
 
 def make_client(host: str) -> TestClient:
-    return TestClient(app, client=(host, 50000))
+    _ = host
+    return TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    limiter.reset()
 
 
 def test_ask_oracle_success():
@@ -44,7 +53,7 @@ def test_ask_oracle_success():
 
 
 def test_stream_oracle_success():
-    """Test streaming Oracle endpoint returns the same JSON contract."""
+    """Test streaming Oracle endpoint yields newline-delimited JSON chunks."""
     client = make_client("oracle-stream")
     response = client.post("/api/oracle/stream", json={
         "message": "Make this simpler",
@@ -55,8 +64,16 @@ def test_stream_oracle_success():
     })
 
     assert response.status_code == 200
-    assert "trust" in response.json()
-    assert response.headers["content-type"].startswith("application/json")
+    chunks = [
+        json.loads(line)
+        for line in response.text.splitlines()
+        if line.strip()
+    ]
+    assert response.headers["content-type"].startswith("application/x-ndjson")
+    assert "".join(chunk["delta"] for chunk in chunks).startswith("[MOCK]")
+    assert chunks[-1]["done"] is True
+    assert chunks[-1]["trust"]
+    OracleResponseSchema.model_validate(chunks[-1]["response"])
 
 
 def test_ask_oracle_rate_limit():
@@ -125,3 +142,19 @@ def test_unauthenticated_oracle_request_currently_uses_guest_mode_contract():
 
     assert response.status_code == 200
     assert response.json()["trust"]
+
+
+def test_stream_oracle_error_response_is_readable(monkeypatch):
+    async def broken_generate(**_kwargs):
+        raise RuntimeError("stream broke")
+
+    monkeypatch.setattr("backend.routes.oracle.oracle_service.generate", broken_generate)
+    client = make_client("oracle-stream-error")
+
+    response = client.post("/api/oracle/stream", json={
+        "message": "hello",
+        "currentState": "WELCOME"
+    })
+
+    assert response.status_code == 500
+    assert response.json()["detail"] == "stream broke"

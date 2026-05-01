@@ -30,6 +30,7 @@ vi.mock("recharts", () => {
   return {
     ResponsiveContainer: passthrough,
     BarChart: passthrough,
+    CartesianGrid: () => React.createElement("div", { "data-testid": "chart-grid" }),
     Tooltip: () => React.createElement("div", { "data-testid": "chart-tooltip" }),
     XAxis: () => React.createElement("div", { "data-testid": "chart-x-axis" }),
     YAxis: () => React.createElement("div", { "data-testid": "chart-y-axis" }),

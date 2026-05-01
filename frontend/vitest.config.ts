@@ -22,6 +22,8 @@ export default defineConfig({
         'tests/**',
         'frontend/tests/**',
         '**/*.d.ts',
+        '*.config.*',
+        '.eslintrc.cjs',
         'src/main.tsx',
         'frontend/src/main.tsx',
         'src/vite-env.d.ts',
