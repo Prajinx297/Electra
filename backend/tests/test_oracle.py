@@ -102,7 +102,7 @@ def test_oracle_accepts_pydantic_validated_input():
         "cognitiveLevel": "citizen",
         "language": "en",
         "sessionId": "session-1",
-        "profile": {"location": "Atlanta, GA"}
+        "profile": {"location": "Mumbai, Maharashtra"}
     })
 
     assert response.status_code == 200

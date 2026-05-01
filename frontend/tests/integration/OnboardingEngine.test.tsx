@@ -10,7 +10,7 @@ describe("OnboardingEngine", () => {
     const onComplete = vi.fn();
     render(<OnboardingEngine onComplete={onComplete} />);
 
-    await userEvent.type(screen.getByPlaceholderText("Atlanta, GA"), "Phoenix, AZ");
+    await userEvent.type(screen.getByPlaceholderText("Mumbai, Maharashtra"), "Delhi, NCR");
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
     await userEvent.click(screen.getByRole("button", { name: "confident" }));
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
@@ -19,7 +19,7 @@ describe("OnboardingEngine", () => {
 
     expect(onComplete).toHaveBeenCalledWith(
       expect.objectContaining({
-        location: "Phoenix, AZ",
+        location: "Delhi, NCR",
         familiarity: "confident",
         accessibilityNeeds: ["Mobility"],
         toneMode: "policy-expert"
@@ -31,7 +31,7 @@ describe("OnboardingEngine", () => {
     const onComplete = vi.fn();
     render(<OnboardingEngine onComplete={onComplete} />);
 
-    await userEvent.type(screen.getByPlaceholderText("Atlanta, GA"), "Madison, WI");
+    await userEvent.type(screen.getByPlaceholderText("Mumbai, Maharashtra"), "Chennai, Tamil Nadu");
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));
     await userEvent.click(screen.getByRole("button", { name: "confident" }));
     await userEvent.click(screen.getByRole("button", { name: "Continue" }));

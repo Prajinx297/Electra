@@ -34,7 +34,7 @@ async def test_gemini_service_uses_mock_response_without_api_key(monkeypatch):
 
     assert response["message"].startswith("[MOCK] I received: hello")
     assert response["render"] == "VoterRegistrationForm"
-    assert response["trust"]["sources"][0]["publisher"] == "USAGov"
+    assert response["trust"]["sources"][0]["publisher"] == "ECI"
 
 
 @pytest.mark.asyncio

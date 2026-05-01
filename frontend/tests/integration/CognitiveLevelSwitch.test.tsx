@@ -43,7 +43,7 @@ describe("cognitive level switch", () => {
     streamOracleMock.mockImplementation(streamResponse);
     useElectraStore.setState(useElectraStore.getInitialState(), true);
     useElectraStore.getState().completeOnboarding({
-      location: "Atlanta, GA",
+      location: "Mumbai, Maharashtra",
       familiarity: "first-time",
       accessibilityNeeds: [],
       toneMode: "citizen",

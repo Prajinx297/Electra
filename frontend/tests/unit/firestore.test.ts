@@ -86,7 +86,7 @@ describe("firestore persistence helpers", () => {
 
   it("persistOnboardingProfile stores tone and accessibility needs", async () => {
     await persistOnboardingProfile("user-1", {
-      location: "Phoenix, AZ",
+      location: "Delhi, NCR",
       familiarity: "confident",
       accessibilityNeeds: ["Mobility"],
       toneMode: "policy-expert",
@@ -104,14 +104,14 @@ describe("firestore persistence helpers", () => {
   it("flagSourceAsOutdated writes to the review queue", async () => {
     await flagSourceAsOutdated({
       sessionId: "session-1",
-      sourceId: "usa-gov-voting",
+      sourceId: "eci-gov-voting",
       reason: "Looks stale"
     });
 
     expect(collection).toHaveBeenCalledWith(expect.anything(), "reviewQueue");
     expect(addDoc).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ sourceId: "usa-gov-voting", createdAt: "server-time" })
+      expect.objectContaining({ sourceId: "eci-gov-voting", createdAt: "server-time" })
     );
   });
 });

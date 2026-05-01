@@ -3,8 +3,8 @@
 ![Coverage](https://img.shields.io/badge/coverage-98%25-brightgreen.svg) ![Lighthouse](https://img.shields.io/badge/lighthouse-95%2B-brightgreen.svg)
 
 ## The Problem
-40% of eligible US voters don't vote. The #1 reason: confusion about the 
-process. Existing tools are built for people who already know the system.
+India has 950+ million eligible voters, yet many first-time and rural voters 
+struggle with the process. Existing tools are built for people who already know the system.
 ELECTRA solves the CONFUSION problem — not the information problem.
 
 ## What Makes ELECTRA Different
@@ -43,13 +43,13 @@ graph TD
 ## Impact Projection
 - Journey completion rate tracked in real time
 - Confusion heatmap identifies highest drop-off steps
-- Architecture scales to any country's election system
+- Architecture scales to any Indian state's election system
 - Self-improving: heatmap data tunes Oracle prompts over time
 
 ## Roadmap
-- **v2**: Official election commission API integration (real data)
-- **v2**: Voter registration form submission (real API)
-- **v3**: 50+ languages via Oracle language switching
+- **v2**: Election Commission of India API integration (real data)
+- **v2**: Voter registration via NVSP portal integration
+- **v3**: 22+ official Indian languages via Oracle language switching
 - **v3**: SMS-based Oracle for users without smartphones
 
 ## Setup (5 commands)

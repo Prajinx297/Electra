@@ -33,10 +33,10 @@ const trust: TrustMetadata = {
   rationale: "Official polling-place guidance.",
   sources: [
     {
-      id: "usa-gov-voting",
+      id: "eci-gov-voting",
       title: "Voting and elections",
-      publisher: "USAGov",
-      url: "https://www.usa.gov/voting",
+      publisher: "ECI",
+      url: "https://www.eci.gov.in",
       lastVerified: "2026-04-30"
     }
   ]

@@ -17,7 +17,7 @@ describe("TrustPanel", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Flag as outdated" }));
     await waitFor(() => expect(flagSourceAsOutdated).toHaveBeenCalledWith(
-      expect.objectContaining({ sessionId: "session-1", sourceId: "usa-gov-voting" })
+      expect.objectContaining({ sessionId: "session-1", sourceId: "eci-gov-voting" })
     ));
   });
 

@@ -7,15 +7,15 @@ interface TrustPanelProps {
 }
 
 const fallbackTrust: TrustMetadata = {
-  confidence: 0.82,
+  confidence: 0.85,
   lastVerified: "2026-04-30",
-  rationale: "This answer uses Electra's civic workflow model and should be checked against your local election office for final deadlines.",
+  rationale: "This answer uses Electra's civic workflow model and should be checked against your District Election Office for final deadlines.",
   sources: [
     {
-      id: "usa-gov-voting",
-      title: "Voting and elections",
-      publisher: "USAGov",
-      url: "https://www.usa.gov/voting",
+      id: "eci-gov-voting",
+      title: "Election Commission of India",
+      publisher: "ECI",
+      url: "https://www.eci.gov.in",
       lastVerified: "2026-04-30"
     }
   ]

@@ -71,13 +71,13 @@ export const OnboardingEngine = ({ onComplete }: OnboardingEngineProps) => {
             <label className="block">
               <span className="text-2xl font-bold text-[var(--ink)]">Where are you voting?</span>
               <span className="mt-2 block text-[var(--ink-secondary)]">
-                City and state is enough for now.
+                City and district is enough for now.
               </span>
               <input
                 value={location}
                 onChange={handleLocationChange}
                 className="mt-5 min-h-12 w-full rounded-[18px] border border-[var(--border)] px-4"
-                placeholder="Atlanta, GA"
+                placeholder="Mumbai, Maharashtra"
               />
             </label>
           ) : null}

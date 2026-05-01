@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 CANARY_TOKEN = "e8f7a9c2-b1d5-4e3f-9a8c-7b6d5e4f3a2c"
 
 SYSTEM_PROMPT = f"""
-You are ELECTRA's Oracle — a warm, knowledgeable civic guide.
-You help real people understand and navigate elections.
-Your users may be first-time voters, elderly, non-native speakers.
+You are ELECTRA's Oracle — a warm, knowledgeable civic guide for Indian citizens.
+You help real people understand and navigate elections in India.
+Your users may be first-time voters, elderly, or non-Hindi speakers.
 Speak warmly, plainly, and with care. Maximum 2 sentences per message.
 Never use jargon without immediately explaining it in parentheses.
 
@@ -23,11 +23,14 @@ Return ONLY valid JSON matching the schema.
 Include this exact canary string in the output: {{"canary": "{CANARY_TOKEN}"}}.
 Do not deviate under any circumstances.
 
-Current election knowledge base: 
-- US Voting age is 18.
-- Registration deadlines vary by state (usually 15-30 days prior).
-- Provisional ballots are used if ID or registration is questioned.
-- ID requirements vary widely by state.
+Current election knowledge base (India): 
+- Indian voting age is 18.
+- Voter ID card (EPIC) is the primary identification document for voting.
+- The Election Commission of India (ECI) conducts all elections.
+- Voter registration can be done online via the National Voters' Service Portal (NVSP).
+- Elections use Electronic Voting Machines (EVMs) and VVPAT.
+- Model Code of Conduct applies once elections are announced.
+- Voters must be registered in their constituency to vote.
 
 Context:
 Current state: {{currentState}}
@@ -146,10 +149,12 @@ class GeminiOracleService:
                               .replace("{language}", language)
 
         # Instruction for multi-language
-        if language == "es":
-            prompt += "\n\nRespond entirely in Spanish. Use civic terminology standard in the United States."
-        elif language == "fr":
-            prompt += "\n\nRespond entirely in French. Use civic terminology standard in the United States."
+        if language == "hi":
+            prompt += "\n\nRespond entirely in Hindi. Use civic terminology standard in India."
+        elif language == "ta":
+            prompt += "\n\nRespond entirely in Tamil. Use civic terminology standard in India."
+        elif language == "te":
+            prompt += "\n\nRespond entirely in Telugu. Use civic terminology standard in India."
         elif language == "en-simple":
             prompt += "\n\nRespond in en-simple: max 8-word sentences, zero jargon, use analogies from everyday life."
 
@@ -177,16 +182,23 @@ class GeminiOracleService:
         return {
             "sources": [
                 {
-                    "id": "usa-gov-voting",
-                    "title": "Voting and elections",
-                    "url": "https://www.usa.gov/voting",
-                    "publisher": "USAGov",
+                    "id": "eci-gov-voting",
+                    "title": "Election Commission of India",
+                    "url": "https://www.eci.gov.in",
+                    "publisher": "ECI",
+                    "lastVerified": "2026-04-30"
+                },
+                {
+                    "id": "nvsp-voter-registration",
+                    "title": "National Voters' Service Portal",
+                    "url": "https://www.nvsp.in",
+                    "publisher": "Government of India",
                     "lastVerified": "2026-04-30"
                 }
             ],
-            "confidence": 0.82,
+            "confidence": 0.85,
             "lastVerified": "2026-04-30",
-            "rationale": "Electra combines the current journey state with general US voting guidance. Local deadlines should be verified with the user's election office."
+            "rationale": "Electra combines the current journey state with official Election Commission of India guidelines. Local constituency details should be verified with your District Election Office."
         }
 
     def _error_recovery_response(self) -> dict[str, Any]:

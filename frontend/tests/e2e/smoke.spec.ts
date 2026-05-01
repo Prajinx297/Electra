@@ -28,7 +28,7 @@ test("loads app, completes onboarding, asks Oracle, and sees response", async ({
   });
 
   await page.goto("/");
-  await page.getByPlaceholder("Atlanta, GA").fill("Atlanta, GA");
+  await page.getByPlaceholder("Mumbai, Maharashtra").fill("Mumbai, Maharashtra");
   await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("button", { name: "confident" }).click();
   await page.getByRole("button", { name: "Continue" }).click();

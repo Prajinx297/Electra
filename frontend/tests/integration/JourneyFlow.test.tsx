@@ -63,7 +63,7 @@ describe("journey flow", () => {
       .mockImplementationOnce(streamResponse(secondResponse));
     useElectraStore.setState(useElectraStore.getInitialState(), true);
     useElectraStore.getState().completeOnboarding({
-      location: "Atlanta, GA",
+      location: "Mumbai, Maharashtra",
       familiarity: "first-time",
       accessibilityNeeds: [],
       toneMode: "citizen",

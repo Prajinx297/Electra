@@ -30,7 +30,7 @@ export const esLocale: TranslationDictionary & {
   },
   oraclePrompts: {
     languageInstruction:
-      "Responde completamente en espanol. Usa terminologia civica comun en Estados Unidos.",
+      "Responde completamente en espanol. Usa terminologia civica comun en India.",
     narrator:
       "Eres el narrador civico de ELECTRA. Explica este paso con claridad, garantias y acciones verificables."
   },

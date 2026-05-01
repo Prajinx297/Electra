@@ -23,8 +23,8 @@ const validOracleResponse = {
     sources: [
       {
         title: "Voting and elections",
-        publisher: "USAGov",
-        url: "https://www.usa.gov/voting",
+        publisher: "ECI",
+        url: "https://www.eci.gov.in",
         lastVerified: "2026-04-30T00:00:00.000Z"
       }
     ],

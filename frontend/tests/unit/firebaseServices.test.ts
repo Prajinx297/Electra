@@ -19,12 +19,12 @@ describe("Firebase service wrappers", () => {
     analytics.trackNavigatedBack("WELCOME");
     analytics.trackPredictionHit("DeadlineCalculator");
     await analytics.trackEvent("custom_event", { ok: true });
-    analytics.civicEvents.onboardingCompleted("citizen", "Atlanta");
+    analytics.civicEvents.onboardingCompleted("citizen", "Mumbai");
     analytics.civicEvents.oracleQueried("citizen", "WELCOME");
     analytics.civicEvents.journeyStepCompleted("WELCOME", 7);
     analytics.civicEvents.simulatorCompleted(true);
     analytics.civicEvents.civicScoreShared(250, "Informed Voter");
-    analytics.civicEvents.sourceOutdatedFlagged("USAGov");
+    analytics.civicEvents.sourceOutdatedFlagged("ECI");
     analytics.civicEvents.languageChanged("en", "es");
 
     expect(fbLogEvent).toHaveBeenCalledWith(
