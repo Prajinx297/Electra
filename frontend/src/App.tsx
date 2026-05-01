@@ -38,7 +38,7 @@ export const App = () => {
         streamToken={streamToken}
         onStreamComplete={handleStreamComplete}
         onStreamError={handleStreamError}
-        demoAnnotation={predictionHit ? "Loaded instantly. Oracle predicted this." : demoAnnotation}
+        demoAnnotation={predictionHit ? "Loaded instantly. Oracle predicted this." : (demoAnnotation ?? null)}
       />
     </div>
   );

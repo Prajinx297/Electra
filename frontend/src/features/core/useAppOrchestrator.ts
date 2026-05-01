@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useElectraStore } from "../../engines/stateEngine";
 import { ensureAnonymousAuth, getCurrentUserToken, subscribeToAuth } from "../../firebase/auth";
-import { persistConversationTurn, persistOnboardingProfile, persistSession } from "../../firebase/firestore";
+import { persistConversationTurn, persistOnboardingProfile } from "../../firebase/firestore";
 import { useSessionSync } from "../../hooks/useSessionSync";
 import { civicBus } from "../../events/civicEventBus";
 import { civicEvents } from "../../firebase/analytics";
@@ -128,8 +128,8 @@ export const useAppOrchestrator = () => {
       return;
     }
     const timer = window.setTimeout(() => {
-      const prompt = demoPrompts[demoIndex];
-      void runOracle(prompt);
+      const prompt = demoPrompts[demoIndex] ?? "";
+      if (prompt) void runOracle(prompt);
       setDemoIndex((current) => current + 1);
     }, 4000);
     return () => window.clearTimeout(timer);
