@@ -4,7 +4,8 @@ from typing import Annotated, TypedDict
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 
-from backend.services.firebase_admin import get_db, verify_token
+from services.firebase_admin import get_db
+from dependencies import get_current_user
 
 router = APIRouter()
 
@@ -35,13 +36,6 @@ BADGES: list[BadgeSpec] = [
     {"id": "constitutional-scholar", "label": "Constitutional Scholar", "threshold": 2000, "icon": "Scroll"},
 ]
 
-score_memory: dict[str, dict[str, int | str]] = {}
-
-
-class CurrentUser(BaseModel):
-    uid: str
-
-
 class CivicEvent(BaseModel):
     type: str
     points: int | None = None
@@ -68,17 +62,6 @@ class ScoreUpdate(CivicScoreResponse):
     reason: str
 
 
-async def get_current_user(
-    authorization: Annotated[str | None, Header()] = None,
-) -> CurrentUser:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing Firebase ID token.")
-
-    decoded = verify_token(authorization.replace("Bearer ", "", 1))
-    if not decoded or "uid" not in decoded:
-        raise HTTPException(status_code=401, detail="Invalid or expired Firebase ID token.")
-
-    return CurrentUser(uid=str(decoded["uid"]))
 
 
 def _badges_for_score(score: int) -> list[CivicBadge]:
@@ -117,13 +100,6 @@ def _response_for_score(score: int, streak_days: int = 1) -> CivicScoreResponse:
 
 
 def _load_score(uid: str) -> CivicScoreResponse:
-    if uid in score_memory:
-        stored = score_memory[uid]
-        return _response_for_score(
-            score=_as_int(stored.get("score", 0)),
-            streak_days=_as_int(stored.get("streakDays", 1), 1),
-        )
-
     try:
         snapshot = get_db().collection("civicScores").document(uid).get()
         if snapshot.exists:
@@ -133,23 +109,24 @@ def _load_score(uid: str) -> CivicScoreResponse:
                 streak_days=_as_int(data.get("streakDays", 1), 1),
             )
     except Exception:
-        return _response_for_score(0)
+        pass
 
     return _response_for_score(0)
 
 
-def _save_score(uid: str, response: CivicScoreResponse) -> None:
-    payload: dict[str, int | str] = {
-        "score": response.score,
-        "streakDays": response.streakDays,
-        "updatedAt": datetime.now(tz=UTC).isoformat(),
+def _save_score(uid: str, points: int, streak_days: int) -> None:
+    from google.cloud.firestore_v1 import firestore
+    
+    payload = {
+        "score": firestore.Increment(points),
+        "streakDays": streak_days,
+        "updatedAt": firestore.SERVER_TIMESTAMP,
     }
-    score_memory[uid] = payload
 
     try:
         get_db().collection("civicScores").document(uid).set(payload, merge=True)
     except Exception:
-        return
+        pass
 
 
 @router.post("/civic-score/event", response_model=ScoreUpdate)
@@ -168,7 +145,7 @@ async def record_event(
         for badge in next_response.badges
         if badge.earned and badge.id not in previous_badges
     ]
-    _save_score(user.uid, next_response)
+    _save_score(user.uid, points, next_response.streakDays)
 
     return ScoreUpdate(
         **next_response.model_dump(),

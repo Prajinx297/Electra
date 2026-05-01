@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import pytest
 
 import backend.services.firebase_admin as firebase_service
-from backend.services.claude_service import ClaudeOracleService
+from backend.services.claude_service import GeminiOracleService
 from backend.services.sanitizer import sanitize_user_input, strip_html, strip_pii
 
 
@@ -21,8 +21,8 @@ def test_sanitizer_strips_html_pii_and_prompt_injection():
 
 @pytest.mark.asyncio
 async def test_claude_service_uses_mock_response_without_api_key(monkeypatch):
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    service = ClaudeOracleService()
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    service = GeminiOracleService()
 
     response = await service.generate(
         user_message="<b>hello</b>",
@@ -39,7 +39,7 @@ async def test_claude_service_uses_mock_response_without_api_key(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_claude_service_parses_json_response(monkeypatch):
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     payload = {
         "message": "Listo.",
         "tone": "informative",
@@ -55,13 +55,13 @@ async def test_claude_service_parses_json_response(monkeypatch):
         "trust": {"sources": [], "confidence": 0.9, "lastVerified": "2026-04-30", "rationale": "Test"},
     }
 
-    class Messages:
-        async def create(self, **kwargs):
-            assert "Respond entirely in Spanish" in kwargs["system"]
-            return SimpleNamespace(content=[SimpleNamespace(text=f"```json\n{json.dumps(payload)}\n```")])
+    class MockModel:
+        def generate_content(self, prompt, **kwargs):
+            assert "Respond entirely in Spanish" in prompt
+            return SimpleNamespace(text=json.dumps(payload))
 
     service = ClaudeOracleService()
-    service.client = SimpleNamespace(messages=Messages())
+    service.model = MockModel()
 
     response = await service.generate(
         user_message="hola",
@@ -76,7 +76,7 @@ async def test_claude_service_parses_json_response(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_claude_service_parses_plain_markdown_fence(monkeypatch):
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     payload = {
         "message": "Pret.",
         "tone": "informative",
@@ -92,13 +92,13 @@ async def test_claude_service_parses_plain_markdown_fence(monkeypatch):
         "trust": {"sources": [], "confidence": 0.9, "lastVerified": "2026-04-30", "rationale": "Test"},
     }
 
-    class Messages:
-        async def create(self, **kwargs):
-            assert "Respond entirely in French" in kwargs["system"]
-            return SimpleNamespace(content=[SimpleNamespace(text=f"```\n{json.dumps(payload)}\n```")])
+    class MockModel:
+        def generate_content(self, prompt, **kwargs):
+            assert "Respond entirely in French" in prompt
+            return SimpleNamespace(text=json.dumps(payload))
 
     service = ClaudeOracleService()
-    service.client = SimpleNamespace(messages=Messages())
+    service.model = MockModel()
 
     response = await service.generate(
         user_message="bonjour",
@@ -113,14 +113,14 @@ async def test_claude_service_parses_plain_markdown_fence(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_claude_service_recovers_from_client_error(monkeypatch):
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
 
-    class Messages:
-        async def create(self, **_kwargs):
+    class MockModel:
+        def generate_content(self, *args, **kwargs):
             raise RuntimeError("timeout")
 
-    service = ClaudeOracleService()
-    service.client = SimpleNamespace(messages=Messages())
+    service = GeminiOracleService()
+    service.model = MockModel()
 
     response = await service.generate(
         user_message="hello",

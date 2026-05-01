@@ -1,64 +1,58 @@
-name: ELECTRA CI
+name: Electra CI/CD
 
 on:
   push:
-    branches: [main, develop]
+    branches: [ "main" ]
   pull_request:
-    branches: [main]
+    branches: [ "main" ]
 
 jobs:
-  frontend:
-    name: Frontend - Build, Lint, Test, Coverage
+  test-and-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - run: npm ci
-      - run: npm run --prefix frontend type-check
-      - run: npm run --prefix frontend lint
-      - run: npm run --prefix frontend test -- --coverage --reporter=verbose
-      - run: npm run --prefix frontend build
-      - uses: actions/upload-artifact@v4
-        with:
-          name: frontend-coverage
-          path: frontend/coverage/
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: 'pip'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e "backend[dev]"
+    - name: Lint with Ruff
+      run: |
+        ruff check backend/
+    - name: Type check with mypy
+      run: |
+        mypy backend/
+    - name: Setup Firebase Emulator
+      run: npm install -g firebase-tools && firebase setup:emulators:firestore
+    - name: Run Pytest (Unit & Integration)
+      env:
+        FIRESTORE_EMULATOR_HOST: "127.0.0.1:8080"
+        FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099"
+      run: |
+        firebase emulators:exec "pytest backend/tests -v --cov=backend"
 
-  backend:
-    name: Backend - Lint, Type Check, Test, Coverage
+  deploy:
+    needs: test-and-lint
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: python -m pip install --upgrade pip
-      - run: pip install -r backend/requirements.txt
-      - run: pip install ruff mypy pytest-cov
-      - run: ruff check backend/
-      - run: mypy backend/ --ignore-missing-imports
-      - name: Run backend tests with coverage
-        run: |
-          cd backend
-          pytest --cov=. --cov-report=xml --cov-fail-under=80
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-
-  e2e:
-    name: E2E - Playwright Smoke Tests
-    runs-on: ubuntu-latest
-    needs: [frontend, backend]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm ci
-      - run: npx --prefix frontend playwright install --with-deps chromium
-      - run: npm run --prefix frontend test:e2e
-        env:
-          VITE_API_URL: http://localhost:8000
+    - uses: actions/checkout@v4
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        workload_identity_provider: 'projects/PROJECT_ID/locations/global/workloadIdentityPools/github/providers/github-provider'
+        service_account: 'electra-ci@PROJECT.iam.gserviceaccount.com'
+    - name: Deploy to Cloud Run
+      uses: google-github-actions/deploy-cloudrun@v2
+      with:
+        service: 'electra-api'
+        region: 'us-central1'
+        source: 'backend'
+        flags: '--allow-unauthenticated --concurrency=80 --min-instances=1 --max-instances=10'

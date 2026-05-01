@@ -12,7 +12,7 @@ def init_firebase() -> None:
     if not firebase_admin._apps:
         try:
             # First try env var JSON string (easier for cloud deployment)
-            creds_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON")
+            creds_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
             if creds_json:
                 creds_dict = json.loads(creds_json)
                 cred = credentials.Certificate(creds_dict)

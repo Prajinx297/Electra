@@ -36,7 +36,9 @@ export const OracleMessage = ({ message, tone }: OracleMessageProps) => {
       initial={reducedMotion ? undefined : { opacity: 0, y: 8 }}
       animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
       transition={{ duration: reducedMotion ? 0 : 0.2 }}
-      aria-live="polite"
+      role="log"
+      aria-live={tone === "warning" ? "assertive" : "polite"}
+      aria-atomic="true"
       aria-label={buildOracleAriaLabel(message, tone)}
     >
       <div className="inline-flex rounded-full bg-[var(--accent-light)] px-3 py-1 text-sm font-semibold text-[var(--accent)]">
