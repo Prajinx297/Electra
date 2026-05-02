@@ -16,6 +16,14 @@ function formatEntry(entry: LogEntry): string {
 }
 
 export const logger = {
+  /**
+   * Emits an informational development log entry.
+   *
+   * @param message - Human-readable log message.
+   * @param data - Optional structured metadata payload.
+   * @returns No return value.
+   * @throws {Error} Never thrown directly; logging failures are ignored.
+   */
   info(message: string, data?: Record<string, unknown>): void {
     if (isDev) {
       const entry: LogEntry = {
@@ -29,6 +37,14 @@ export const logger = {
     }
   },
 
+  /**
+   * Emits a warning log entry.
+   *
+   * @param message - Human-readable warning message.
+   * @param data - Optional structured metadata payload.
+   * @returns No return value.
+   * @throws {Error} Never thrown directly; logging failures are ignored.
+   */
   warn(message: string, data?: Record<string, unknown>): void {
     const entry: LogEntry = {
       level: 'warn',
@@ -42,6 +58,14 @@ export const logger = {
     }
   },
 
+  /**
+   * Emits an error log entry and forwards telemetry.
+   *
+   * @param message - Human-readable error summary.
+   * @param error - Optional unknown error payload.
+   * @returns No return value.
+   * @throws {Error} Never thrown directly; telemetry failures are ignored.
+   */
   error(message: string, error?: unknown): void {
     const entry: LogEntry = {
       level: 'error',

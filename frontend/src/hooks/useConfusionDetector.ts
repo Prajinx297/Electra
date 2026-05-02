@@ -15,6 +15,18 @@ interface UseConfusionDetectorReturn {
   onRetreat: () => void;
 }
 
+/**
+ * Tracks reread/retreat/stuck confusion signals for an active component.
+ *
+ * @param params - Component and session context for telemetry events.
+ * @example
+ * ```ts
+ * const { onReread, onRetreat } = useConfusionDetector({ componentKey, sessionId });
+ * onReread();
+ * ```
+ * @returns Callbacks used to emit confusion telemetry signals.
+ * @throws {Error} Never thrown directly; analytics calls are side-effect only.
+ */
 export function useConfusionDetector({
   componentKey,
   sessionId,

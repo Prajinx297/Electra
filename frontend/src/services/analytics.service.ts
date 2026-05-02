@@ -4,6 +4,13 @@ import { analytics } from '@/lib/firebase';
 import type { ConfusionEvent, RenderKey } from '@/types';
 
 export class AnalyticsService {
+  /**
+   * Tracks a confusion signal emitted during user interaction.
+   *
+   * @param event - Structured confusion event payload.
+   * @returns No return value.
+   * @throws {Error} Never thrown directly; no-op when analytics is unavailable.
+   */
   public static trackConfusion(event: ConfusionEvent): void {
     if (!analytics) {
       return;
@@ -17,6 +24,14 @@ export class AnalyticsService {
     });
   }
 
+  /**
+   * Tracks Oracle-selected render key for journey step telemetry.
+   *
+   * @param renderKey - Render key shown to the user for this step.
+   * @param sessionId - Session identifier used for aggregation.
+   * @returns No return value.
+   * @throws {Error} Never thrown directly; no-op when analytics is unavailable.
+   */
   public static trackJourneyStep(renderKey: RenderKey | string, sessionId: string): void {
     if (!analytics) {
       return;
@@ -29,6 +44,14 @@ export class AnalyticsService {
     });
   }
 
+  /**
+   * Tracks whether the predicted next render matched actual output.
+   *
+   * @param renderKey - Render key that was predicted/observed.
+   * @param wasCorrect - Whether the prediction was correct.
+   * @returns No return value.
+   * @throws {Error} Never thrown directly; no-op when analytics is unavailable.
+   */
   public static trackPredictionHit(renderKey: RenderKey | string, wasCorrect: boolean): void {
     if (!analytics) {
       return;
@@ -40,6 +63,14 @@ export class AnalyticsService {
     });
   }
 
+  /**
+   * Tracks civic score delta emitted by Oracle progression.
+   *
+   * @param delta - Score increment awarded this step.
+   * @param newTotal - Updated cumulative score.
+   * @returns No return value.
+   * @throws {Error} Never thrown directly; no-op when analytics is unavailable.
+   */
   public static trackCivicScoreChange(delta: number, newTotal: number): void {
     if (!analytics) {
       return;
@@ -51,6 +82,14 @@ export class AnalyticsService {
     });
   }
 
+  /**
+   * Tracks application-level errors for observability.
+   *
+   * @param message - High-level error summary.
+   * @param detail - Low-level error details.
+   * @returns No return value.
+   * @throws {Error} Never thrown directly; no-op when analytics is unavailable.
+   */
   public static trackError(message: string, detail: string): void {
     if (!analytics) {
       return;

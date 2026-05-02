@@ -2,6 +2,12 @@ import { z } from 'zod';
 
 import { logger } from './logger';
 
+/**
+ * Zod schema describing a trusted civic source metadata object.
+ *
+ * @returns Zod object schema for source metadata validation.
+ * @throws {Error} Never thrown during schema declaration.
+ */
 export const SourceSchema = z.object({
   title: z.string(),
   publisher: z.string(),
@@ -9,12 +15,24 @@ export const SourceSchema = z.object({
   lastVerified: z.string().datetime(),
 });
 
+/**
+ * Zod schema for trust metadata bundled with Oracle responses.
+ *
+ * @returns Zod object schema for trust payload validation.
+ * @throws {Error} Never thrown during schema declaration.
+ */
 export const TrustSchema = z.object({
   sources: z.array(SourceSchema),
   confidence: z.number().min(0).max(100),
   rationale: z.string(),
 });
 
+/**
+ * Zod schema for full Oracle response validation.
+ *
+ * @returns Zod object schema for Oracle response payloads.
+ * @throws {Error} Never thrown during schema declaration.
+ */
 export const OracleResponseSchema = z.object({
   message: z.string(),
   tone: z.enum(['five-year-old', 'citizen', 'policy-expert']),
@@ -31,8 +49,18 @@ export const OracleResponseSchema = z.object({
   trust: TrustSchema,
 });
 
+/**
+ * Type-safe Oracle response inferred from `OracleResponseSchema`.
+ */
 export type ValidatedOracleResponse = z.infer<typeof OracleResponseSchema>;
 
+/**
+ * Validates unknown Oracle API payloads against the canonical schema.
+ *
+ * @param raw - Unknown payload returned from the Oracle endpoint.
+ * @returns A strongly typed and schema-validated Oracle response object.
+ * @throws {Error} When payload validation fails.
+ */
 export function validateOracleResponse(raw: unknown): ValidatedOracleResponse {
   const result = OracleResponseSchema.safeParse(raw);
   if (!result.success) {

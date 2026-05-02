@@ -14,6 +14,18 @@ interface UseOracleReturn {
   reset: () => void;
 }
 
+/**
+ * Executes Oracle requests and exposes response lifecycle state.
+ *
+ * @example
+ * ```ts
+ * const { query, response, status, error } = useOracle();
+ * await query(requestPayload);
+ * ```
+ *
+ * @returns Query function and latest Oracle request state.
+ * @throws {OracleServiceError} Propagated internally and normalized into hook error state.
+ */
 export function useOracle(): UseOracleReturn {
   const [response, setResponse] = useState<OracleResponse | null>(null);
   const [status, setStatus] = useState<JourneyStatus>(JourneyStatus.Idle);
@@ -31,10 +43,7 @@ export function useOracle(): UseOracleReturn {
       const result = await OracleService.query(request);
       setResponse(result);
       setStatus(JourneyStatus.Success);
-      AnalyticsService.trackJourneyStep(
-        result.renderKey ?? result.render ?? 'unknown',
-        request.sessionId ?? '',
-      );
+      AnalyticsService.trackJourneyStep(result.renderKey ?? 'unknown', request.sessionId ?? '');
     } catch (error_: unknown) {
       const message =
         error_ instanceof OracleServiceError

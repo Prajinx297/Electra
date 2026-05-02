@@ -1,3 +1,11 @@
+/**
+ * Computes WCAG contrast ratio for two hex colors.
+ *
+ * @param hex1 - First color in #RRGGBB format.
+ * @param hex2 - Second color in #RRGGBB format.
+ * @returns Contrast ratio where 1 is lowest and 21 is highest.
+ * @throws {Error} Never thrown directly for valid hex strings.
+ */
 export function checkContrast(hex1: string, hex2: string): number {
   const getLuminance = (hex: string): number => {
     const rgb = Number.parseInt(hex.slice(1), 16);
