@@ -92,7 +92,7 @@ async def ingest_ballot(ballot: BallotIngestionRequest) -> BallotEvent:
 @router.post("/simulator/tally", response_model=TallyResult)
 async def run_tally(config: TallyConfig) -> TallyResult:
     """Run a deterministic mock tally and optionally inject an anomaly."""
-    rng = Random(2026 if not config.anomaly else 441)
+    rng = Random(2026 if not config.anomaly else 441)  # noqa: S311
     base_totals = [
         CandidateTotal(candidate="Rivera", votes=5840 + rng.randint(0, 240)),
         CandidateTotal(candidate="Chen", votes=6018 + rng.randint(0, 220)),

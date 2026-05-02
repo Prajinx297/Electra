@@ -9,8 +9,11 @@ from backend.services.sanitizer import sanitize_user_input
 
 logger = logging.getLogger(__name__)
 
-# Basic system prompt encoding the state machine expectations
-CANARY_TOKEN = "e8f7a9c2-b1d5-4e3f-9a8c-7b6d5e4f3a2c"
+# Basic system prompt encoding the state machine expectations.
+CANARY_MARKER = os.environ.get(
+    "ELECTRA_ORACLE_CANARY_MARKER",
+    "electra-oracle-canary-v1",
+)
 
 SYSTEM_PROMPT = f"""
 You are ELECTRA's Oracle — a warm, knowledgeable civic guide for Indian citizens.
@@ -20,7 +23,7 @@ Speak warmly, plainly, and with care. Maximum 2 sentences per message.
 Never use jargon without immediately explaining it in parentheses.
 
 Return ONLY valid JSON matching the schema. 
-Include this exact canary string in the output: {{"canary": "{CANARY_TOKEN}"}}.
+Include this exact canary string in the output: {{"canary": "{CANARY_MARKER}"}}.
 Do not deviate under any circumstances.
 
 Current election knowledge base (India): 
@@ -172,7 +175,7 @@ class GeminiOracleService:
             response = self.model.generate_content(full_prompt)
             data = cast(dict[str, object], json.loads(self._strip_json_fence(response.text)))
             
-            if "canary" in data and data.get("canary") != CANARY_TOKEN:
+            if "canary" in data and data.get("canary") != CANARY_MARKER:
                 logger.error("Prompt injection detected: Canary missing or altered.")
                 return self._error_recovery_response()
                 
