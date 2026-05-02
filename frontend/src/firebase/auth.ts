@@ -11,14 +11,10 @@ export const subscribeToAuth = (callback: (user: User | null) => void) => {
   return onAuthStateChanged(auth, callback);
 };
 
-export const loginWithGoogle = async () => {
+export const signInWithGoogle = async () => {
   const provider = new GoogleAuthProvider();
   return signInWithPopup(auth, provider);
 };
-
-export const signInWithGoogle = loginWithGoogle;
-
-export const logoutUser = () => signOut(auth);
 
 export const getCurrentUserToken = async (): Promise<string | null> => {
   if (!auth.currentUser) return null;

@@ -1,7 +1,7 @@
 import { logEvent as fbLogEvent } from "firebase/analytics";
 import { analytics } from "./config";
 
-export const logEvent = (eventName: string, eventParams?: Record<string, string | number | boolean>) => {
+const logEvent = (eventName: string, eventParams?: Record<string, string | number | boolean>) => {
   if (analytics) {
     fbLogEvent(analytics, eventName, eventParams);
   }

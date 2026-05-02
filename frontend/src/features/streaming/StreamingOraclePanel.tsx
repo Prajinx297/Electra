@@ -12,6 +12,7 @@ interface StreamingProps {
   token?: string | null;
   onComplete?: (response: OracleResponse) => void;
   onError?: (message: string) => void;
+  onRetry?: () => void;
 }
 
 const waitForCharacter = () =>
@@ -51,7 +52,8 @@ export const StreamingOraclePanel = ({
   sessionId,
   token,
   onComplete,
-  onError
+  onError,
+  onRetry
 }: StreamingProps) => {
   const [buffer, setBuffer] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -204,7 +206,7 @@ export const StreamingOraclePanel = ({
         {interrupted ? (
           <button
             type="button"
-            onClick={() => void startStream()}
+            onClick={onRetry ?? (() => void startStream())}
             className="min-h-10 rounded-full bg-[var(--ink)] px-4 text-sm font-bold text-[var(--surface)]"
           >
             Retry

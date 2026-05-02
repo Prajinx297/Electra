@@ -5,7 +5,7 @@ import { OnboardingEngine } from "./features/onboarding/OnboardingEngine";
 import { signInWithGoogle } from "./firebase/auth";
 import { useAppOrchestrator } from "./features/core/useAppOrchestrator";
 
-export const App = () => {
+const App = () => {
   const pathname = window.location.pathname;
   const {
     profile, userLabel, busy, streamRequest, streamToken, predictionHit, demoAnnotation,

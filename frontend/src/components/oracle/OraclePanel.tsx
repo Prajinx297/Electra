@@ -66,6 +66,7 @@ export const OraclePanel = ({
           token={streamToken}
           onComplete={onStreamComplete}
           onError={onStreamError}
+          onRetry={() => void onAsk(streamRequest.userMessage)}
         />
       ) : busy ? (
         <div className="animate-pulse space-y-4">
@@ -106,7 +107,7 @@ export const OraclePanel = ({
             value={question}
             onChange={handleQuestionChange}
             disabled={busy}
-            className="min-h-[112px] w-full rounded-[18px] border border-[var(--border)] px-4 py-3 disabled:opacity-50"
+            className="min-h-[112px] w-full rounded-[18px] border border-[var(--border)] bg-transparent text-[var(--ink)] px-4 py-3 disabled:opacity-50"
             placeholder="Ask a question"
           />
         </label>

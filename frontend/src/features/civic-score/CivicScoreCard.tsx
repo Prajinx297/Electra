@@ -10,7 +10,7 @@ interface CivicScoreCardProps {
   onClose: () => void;
 }
 
-export const badges: CivicBadge[] = [
+const badges: CivicBadge[] = [
   { id: "civic-newcomer", label: "Civic Newcomer", threshold: 50, icon: "Ballot", earned: false },
   { id: "informed-voter", label: "Informed Voter", threshold: 200, icon: "Checklist", earned: false },
   { id: "civic-champion", label: "Civic Champion", threshold: 500, icon: "Scales", earned: false },
