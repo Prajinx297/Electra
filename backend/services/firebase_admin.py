@@ -1,11 +1,37 @@
 import os
 import json
 import logging
-from typing import Any
+from collections.abc import Mapping
+from typing import Protocol, cast
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 
 logger = logging.getLogger(__name__)
+
+
+class FirestoreSnapshot(Protocol):
+    exists: bool
+
+    def to_dict(self) -> dict[str, object] | None:
+        ...
+
+
+class FirestoreDocument(Protocol):
+    def get(self) -> FirestoreSnapshot:
+        ...
+
+    def set(self, payload: Mapping[str, object], merge: bool = False) -> None:
+        ...
+
+
+class FirestoreCollection(Protocol):
+    def document(self, uid: str) -> FirestoreDocument:
+        ...
+
+
+class FirestoreClient(Protocol):
+    def collection(self, name: str) -> FirestoreCollection:
+        ...
 
 def init_firebase() -> None:
     """Initialize Firebase Admin SDK."""
@@ -26,15 +52,15 @@ def init_firebase() -> None:
         except Exception as e:
             logger.warning(f"Could not initialize Firebase Admin SDK: {e}. Some features may be disabled.")
 
-def verify_token(token: str) -> dict[str, Any] | None:
+def verify_token(token: str) -> dict[str, object] | None:
     """Verify a Firebase ID token."""
     try:
         decoded_token = auth.verify_id_token(token)
-        return decoded_token
+        return cast(dict[str, object], decoded_token)
     except Exception as e:
         logger.error(f"Token verification failed: {e}")
         return None
 
-def get_db() -> Any:
+def get_db() -> FirestoreClient:
     """Get Firestore client."""
-    return firestore.client()
+    return cast(FirestoreClient, firestore.client())

@@ -1,4 +1,4 @@
-import type { OracleRequest, OracleResponse, OracleStreamChunk, TrustMetadata } from "../types";
+import type { OracleRequest, OracleResponse, OracleStreamChunk, TrustMetadata } from '../types';
 
 const ORACLE_TIMEOUT_MS = 12000;
 const RETRY_DELAYS_MS = [250, 750];
@@ -6,11 +6,11 @@ const RETRY_DELAYS_MS = [250, 750];
 interface ApiOracleRequest {
   message: string;
   currentState: string;
-  stateHistory: OracleRequest["history"];
+  stateHistory: OracleRequest['history'];
   cognitiveLevel: string;
   language: string;
-  sessionId?: string;
-  profile?: OracleRequest["profile"];
+  sessionId?: string | undefined;
+  profile?: OracleRequest['profile'] | undefined;
 }
 
 const wait = (delayMs: number) =>
@@ -22,11 +22,11 @@ const withTimeout = (signal?: AbortSignal) => {
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), ORACLE_TIMEOUT_MS);
 
-  signal?.addEventListener("abort", () => controller.abort(), { once: true });
+  signal?.addEventListener('abort', () => controller.abort(), { once: true });
 
   return {
     signal: controller.signal,
-    clear: () => window.clearTimeout(timer)
+    clear: () => window.clearTimeout(timer),
   };
 };
 
@@ -37,13 +37,13 @@ const toApiPayload = (payload: OracleRequest): ApiOracleRequest => ({
   cognitiveLevel: payload.cognitiveLevel,
   language: payload.language,
   sessionId: payload.sessionId,
-  profile: payload.profile
+  profile: payload.profile,
 });
 
 export const requestOracle = async (
   payload: OracleRequest,
   token?: string | null,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<OracleResponse> => {
   let lastError: Error | null = null;
 
@@ -51,14 +51,14 @@ export const requestOracle = async (
     const timeout = withTimeout(signal);
 
     try {
-      const response = await fetch("/api/oracle", {
-        method: "POST",
+      const response = await fetch('/api/oracle', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(toApiPayload(payload)),
-        signal: timeout.signal
+        signal: timeout.signal,
       });
 
       if (!response.ok) {
@@ -67,40 +67,38 @@ export const requestOracle = async (
 
       return (await response.json()) as OracleResponse;
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error("Oracle request failed");
+      lastError = error instanceof Error ? error : new Error('Oracle request failed');
       if (attempt < RETRY_DELAYS_MS.length) {
-        await wait(RETRY_DELAYS_MS[attempt]);
+        await wait(RETRY_DELAYS_MS[attempt] ?? 0);
       }
     } finally {
       timeout.clear();
     }
   }
 
-  throw lastError ?? new Error("Oracle request failed");
+  throw lastError ?? new Error('Oracle request failed');
 };
 
 const parseStructuredChunk = (line: string): OracleStreamChunk | null => {
-  const normalized = line.trim().startsWith("data:")
-    ? line.trim().slice(5).trim()
-    : line.trim();
+  const normalized = line.trim().startsWith('data:') ? line.trim().slice(5).trim() : line.trim();
 
-  if (!normalized || normalized === "[DONE]") {
+  if (!normalized || normalized === '[DONE]') {
     return null;
   }
 
   const parsed = JSON.parse(normalized) as Partial<OracleStreamChunk> & Partial<OracleResponse>;
 
-  if (typeof parsed.delta === "string") {
+  if (typeof parsed.delta === 'string') {
     return parsed as OracleStreamChunk;
   }
 
-  if (typeof parsed.message === "string") {
+  if (typeof parsed.message === 'string') {
     const response = parsed as OracleResponse;
     return {
       delta: response.message,
       done: true,
       trust: response.trust,
-      response
+      response,
     };
   }
 
@@ -110,49 +108,49 @@ const parseStructuredChunk = (line: string): OracleStreamChunk | null => {
 const buildStreamFallbackResponse = (
   payload: OracleRequest,
   message: string,
-  trust?: TrustMetadata
+  trust?: TrustMetadata,
 ): OracleResponse => ({
   message,
-  tone: "informative",
+  tone: 'informative',
   render: null,
   renderProps: {},
   primaryAction: {
-    label: "Keep going",
-    action: "continue"
+    label: 'Keep going',
+    action: 'continue',
   },
   secondaryAction: null,
   progress: {
     step: 1,
     total: 1,
-    label: "Oracle response"
+    label: 'Oracle response',
   },
   proactiveWarning: null,
   stateTransition: payload.currentState,
   cognitiveLevel: payload.cognitiveLevel,
   nextAnticipated: null,
-  confidence: trust?.confidence,
-  trust
+  confidence: trust?.confidence ?? 0.9,
+  trust,
 });
 
 async function* streamOracleChunks(
   payload: OracleRequest,
   signal?: AbortSignal,
-  token?: string | null
+  token?: string | null,
 ): AsyncGenerator<OracleStreamChunk> {
   const timeout = withTimeout(signal);
-  let rawBuffer = "";
-  let lineBuffer = "";
+  let rawBuffer = '';
+  let lineBuffer = '';
   let sawStructuredChunk = false;
 
   try {
-    const response = await fetch("/api/oracle/stream", {
-      method: "POST",
+    const response = await fetch('/api/oracle/stream', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(toApiPayload(payload)),
-      signal: timeout.signal
+      signal: timeout.signal,
     });
 
     if (!response.ok || !response.body) {
@@ -161,7 +159,7 @@ async function* streamOracleChunks(
         delta: fallback.message,
         done: true,
         trust: fallback.trust,
-        response: fallback
+        response: fallback,
       };
       return;
     }
@@ -180,7 +178,7 @@ async function* streamOracleChunks(
       lineBuffer += chunk;
 
       const lines = lineBuffer.split(/\r?\n/);
-      lineBuffer = lines.pop() ?? "";
+      lineBuffer = lines.pop() ?? '';
 
       for (const line of lines) {
         try {
@@ -213,7 +211,7 @@ async function* streamOracleChunks(
         delta: fallback.message,
         done: true,
         trust: fallback.trust,
-        response: fallback
+        response: fallback,
       };
     }
   } finally {
@@ -225,9 +223,9 @@ const streamOracleLegacy = async (
   payload: OracleRequest,
   onToken: (token: string) => void,
   token?: string | null,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ) => {
-  let text = "";
+  let text = '';
   let finalResponse: OracleResponse | null = null;
   let finalTrust: TrustMetadata | undefined;
 
@@ -250,21 +248,21 @@ const streamOracleLegacy = async (
 export function streamOracle(
   payload: OracleRequest,
   signal?: AbortSignal,
-  token?: string | null
+  token?: string | null,
 ): AsyncGenerator<OracleStreamChunk>;
 export function streamOracle(
   payload: OracleRequest,
   onToken: (token: string) => void,
   token?: string | null,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<OracleResponse>;
 export function streamOracle(
   payload: OracleRequest,
   signalOrHandler?: AbortSignal | ((token: string) => void),
   token?: string | null,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ) {
-  if (typeof signalOrHandler === "function") {
+  if (typeof signalOrHandler === 'function') {
     return streamOracleLegacy(payload, signalOrHandler, token, signal);
   }
 

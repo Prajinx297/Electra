@@ -1,24 +1,23 @@
-import { Suspense, useEffect, useMemo } from "react";
-import { getComponent, preloadComponent } from "./ComponentRegistry";
-import { useElectraStore } from "../../engines/stateEngine";
-import type { RenderKey } from "../../types";
+import { Suspense, useEffect, useMemo } from 'react';
+
+import { useElectraStore } from '../../engines/stateEngine';
+import { RenderKey, type RenderKey as RenderKeyType } from '../../types';
+
+import { getComponent, preloadComponent } from './ComponentRegistry';
 
 interface ArenaPanelProps {
-  render: RenderKey | null;
+  render: RenderKeyType | null;
   renderProps: Record<string, unknown>;
 }
 
-export const ArenaPanel = ({ render, renderProps }: ArenaPanelProps) => {
+export const ArenaPanel = ({ render, renderProps }: ArenaPanelProps): JSX.Element => {
   const { predictedRender } = useElectraStore();
 
   useEffect(() => {
     void preloadComponent(predictedRender);
   }, [predictedRender]);
 
-  const Component = useMemo(
-    () => getComponent(render ?? "DecisionCard"),
-    [render]
-  );
+  const Component = useMemo(() => getComponent(render ?? RenderKey.DecisionCard), [render]);
 
   return (
     <Suspense

@@ -8,20 +8,20 @@
   "scripts": {
     "dev": "npm-run-all --parallel dev:frontend dev:backend",
     "dev:frontend": "npm --prefix frontend run dev",
-    "dev:backend": "python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000",
+    "dev:backend": "python -m uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000",
     "build": "npm --prefix frontend run build",
-    "test": "npm --prefix frontend run test && npm --prefix frontend run test:e2e && python -m pytest backend",
+    "type-check": "npm --prefix frontend run type-check",
+    "lint": "npm --prefix frontend run lint",
+    "lint:fix": "npm --prefix frontend run lint:fix",
+    "format": "npm --prefix frontend run format",
+    "test": "npm --prefix frontend run test && python -m pytest backend/tests",
+    "test:watch": "npm --prefix frontend run test:watch",
+    "test:ui": "npm --prefix frontend run test:ui",
     "test:frontend": "npm --prefix frontend run test",
     "test:backend": "python -m pytest backend",
-    "coverage": "npm --prefix frontend run coverage",
-    "lint": "npm --prefix frontend run lint"
+    "coverage": "npm --prefix frontend run test:coverage"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^2.1.8",
-    "jsdom": "^26.1.0",
     "npm-run-all": "^4.1.5"
-  },
-  "dependencies": {
-    "@google/generative-ai": "^0.24.1"
   }
 }

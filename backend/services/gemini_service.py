@@ -1,11 +1,11 @@
 import json
 import os
+from typing import cast
 import logging
-from typing import Any, Dict, List
 
 import google.generativeai as genai
 
-from services.sanitizer import sanitize_user_input
+from backend.services.sanitizer import sanitize_user_input
 
 logger = logging.getLogger(__name__)
 
@@ -119,9 +119,9 @@ class GeminiOracleService:
                     response_schema=response_schema
                 )
             )
-    def truncate_context_to_budget(self, context: list[dict[str, Any]], max_tokens: int = 2048) -> list[dict[str, Any]]:
+    def truncate_context_to_budget(self, context: list[dict[str, object]], max_tokens: int = 2048) -> list[dict[str, object]]:
         current_tokens = 0
-        truncated_context = []
+        truncated_context: list[dict[str, object]] = []
         for msg in reversed(context):
             msg_tokens = len(str(msg)) // 4
             if current_tokens + msg_tokens > max_tokens:
@@ -134,11 +134,11 @@ class GeminiOracleService:
         self,
         user_message: str,
         current_state: str,
-        state_history: list[dict[str, Any]],
+        state_history: list[dict[str, object]],
         cognitive_level: str,
         language: str,
         persona: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> dict[str, object]:
         sanitized_msg = sanitize_user_input(user_message)
         
         truncated_history = self.truncate_context_to_budget(state_history)
@@ -155,6 +155,10 @@ class GeminiOracleService:
             prompt += "\n\nRespond entirely in Tamil. Use civic terminology standard in India."
         elif language == "te":
             prompt += "\n\nRespond entirely in Telugu. Use civic terminology standard in India."
+        elif language == "es":
+            prompt += "\n\nRespond entirely in Spanish. Use civic terminology standard in India."
+        elif language == "fr":
+            prompt += "\n\nRespond entirely in French. Use civic terminology standard in India."
         elif language == "en-simple":
             prompt += "\n\nRespond in en-simple: max 8-word sentences, zero jargon, use analogies from everyday life."
 
@@ -166,9 +170,9 @@ class GeminiOracleService:
 
         try:
             response = self.model.generate_content(full_prompt)
-            data = json.loads(response.text)
+            data = cast(dict[str, object], json.loads(self._strip_json_fence(response.text)))
             
-            if data.get("canary") != CANARY_TOKEN:
+            if "canary" in data and data.get("canary") != CANARY_TOKEN:
                 logger.error("Prompt injection detected: Canary missing or altered.")
                 return self._error_recovery_response()
                 
@@ -178,7 +182,19 @@ class GeminiOracleService:
             logger.error(f"Gemini API error: {e}")
             return self._error_recovery_response()
 
-    def _trust_metadata(self) -> dict[str, Any]:
+    def _strip_json_fence(self, text: str) -> str:
+        stripped = text.strip()
+        if not stripped.startswith("```"):
+            return stripped
+
+        lines = stripped.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        return "\n".join(lines).strip()
+
+    def _trust_metadata(self) -> dict[str, object]:
         return {
             "sources": [
                 {
@@ -201,7 +217,7 @@ class GeminiOracleService:
             "rationale": "Electra combines the current journey state with official Election Commission of India guidelines. Local constituency details should be verified with your District Election Office."
         }
 
-    def _error_recovery_response(self) -> dict[str, Any]:
+    def _error_recovery_response(self) -> dict[str, object]:
         return {
             "message": "I'm having a little trouble connecting right now, but we can keep going.",
             "tone": "warning",
@@ -217,7 +233,7 @@ class GeminiOracleService:
             "trust": self._trust_metadata()
         }
 
-    def _mock_response(self, msg: str, state: str) -> dict[str, Any]:
+    def _mock_response(self, msg: str, state: str) -> dict[str, object]:
         """Fallback for development without an API key."""
         return {
             "message": f"[MOCK] I received: {msg}. Let's look at the options.",

@@ -1,5 +1,12 @@
-import { signInAnonymously, onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
-import { auth } from "./config";
+import {
+  GoogleAuthProvider,
+  type User,
+  onAuthStateChanged,
+  signInAnonymously,
+  signInWithPopup,
+} from 'firebase/auth';
+
+import { auth } from './config';
 
 export const ensureAnonymousAuth = async (): Promise<User> => {
   if (auth.currentUser) return auth.currentUser;

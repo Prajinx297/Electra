@@ -1,16 +1,17 @@
-import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { buildOracleAriaLabel } from "../../utils/accessibilityHelpers";
-import type { Tone } from "../../types";
+import { motion, useReducedMotion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+
+import type { Tone } from '../../types';
+import { buildOracleAriaLabel } from '../../utils/accessibilityHelpers';
 
 interface OracleMessageProps {
   message: string;
   tone: Tone;
 }
 
-export const OracleMessage = ({ message, tone }: OracleMessageProps) => {
+export const OracleMessage = ({ message, tone }: OracleMessageProps): JSX.Element => {
   const reducedMotion = useReducedMotion();
-  const [visible, setVisible] = useState(reducedMotion ? message : "");
+  const [visible, setVisible] = useState(reducedMotion ? message : '');
 
   useEffect(() => {
     if (reducedMotion) {
@@ -33,11 +34,15 @@ export const OracleMessage = ({ message, tone }: OracleMessageProps) => {
   return (
     <motion.div
       className="rounded-[24px] bg-[var(--surface)] p-5 shadow-[0_8px_24px_var(--shadow)]"
-      initial={reducedMotion ? undefined : { opacity: 0, y: 8 }}
-      animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+      {...(reducedMotion
+        ? {}
+        : {
+            initial: { opacity: 0, y: 8 },
+            animate: { opacity: 1, y: 0 },
+          })}
       transition={{ duration: reducedMotion ? 0 : 0.2 }}
       role="log"
-      aria-live={tone === "warning" ? "assertive" : "polite"}
+      aria-live={tone === 'warning' ? 'assertive' : 'polite'}
       aria-atomic="true"
       aria-label={buildOracleAriaLabel(message, tone)}
     >

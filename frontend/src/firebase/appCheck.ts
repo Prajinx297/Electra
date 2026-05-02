@@ -1,5 +1,5 @@
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
-import type { FirebaseApp } from "firebase/app";
+import type { FirebaseApp } from 'firebase/app';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
 export function initAppCheck(firebaseApp: FirebaseApp): void {
   if (!import.meta.env.PROD) {
@@ -13,6 +13,6 @@ export function initAppCheck(firebaseApp: FirebaseApp): void {
 
   initializeAppCheck(firebaseApp, {
     provider: new ReCaptchaV3Provider(siteKey),
-    isTokenAutoRefreshEnabled: true
+    isTokenAutoRefreshEnabled: true,
   });
 }

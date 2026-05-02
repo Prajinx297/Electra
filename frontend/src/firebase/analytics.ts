@@ -1,5 +1,6 @@
-import { logEvent as fbLogEvent } from "firebase/analytics";
-import { analytics } from "./config";
+import { logEvent as fbLogEvent } from 'firebase/analytics';
+
+import { analytics } from './config';
 
 const logEvent = (eventName: string, eventParams?: Record<string, string | number | boolean>) => {
   if (analytics) {
@@ -9,7 +10,7 @@ const logEvent = (eventName: string, eventParams?: Record<string, string | numbe
 
 export const trackEvent = async (
   eventName: string,
-  eventParams?: Record<string, string | number | boolean>
+  eventParams?: Record<string, string | number | boolean>,
 ) => {
   logEvent(eventName, eventParams);
 };
@@ -37,23 +38,21 @@ export const trackPredictionHit = (componentId: string) => {
 
 export const civicEvents = {
   onboardingCompleted: (toneMode: string, location: string) =>
-    logEvent("onboarding_completed", { toneMode, location }),
+    logEvent('onboarding_completed', { toneMode, location }),
 
   oracleQueried: (toneMode: string, stepId: string) =>
-    logEvent("oracle_queried", { toneMode, stepId }),
+    logEvent('oracle_queried', { toneMode, stepId }),
 
   journeyStepCompleted: (stepId: string, timeSpentSeconds: number) =>
-    logEvent("journey_step_completed", { stepId, timeSpentSeconds }),
+    logEvent('journey_step_completed', { stepId, timeSpentSeconds }),
 
   simulatorCompleted: (anomalyInjected: boolean) =>
-    logEvent("simulator_completed", { anomalyInjected }),
+    logEvent('simulator_completed', { anomalyInjected }),
 
   civicScoreShared: (score: number, badge: string) =>
-    logEvent("civic_score_shared", { score, badge }),
+    logEvent('civic_score_shared', { score, badge }),
 
-  sourceOutdatedFlagged: (publisher: string) =>
-    logEvent("source_outdated_flagged", { publisher }),
+  sourceOutdatedFlagged: (publisher: string) => logEvent('source_outdated_flagged', { publisher }),
 
-  languageChanged: (from: string, to: string) =>
-    logEvent("language_changed", { from, to })
+  languageChanged: (from: string, to: string) => logEvent('language_changed', { from, to }),
 };

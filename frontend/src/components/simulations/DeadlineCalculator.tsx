@@ -1,18 +1,23 @@
-import { useMemo, useState } from "react";
-import { calculateDeadline } from "../../engines/simulationEngine";
+import { useMemo, useState } from 'react';
+
+import { calculateDeadline } from '../../engines/simulationEngine';
 
 const stateDeadlines: Record<string, string> = {
-  Arizona: "2026-10-05T00:00:00.000Z",
-  Georgia: "2026-10-06T00:00:00.000Z",
-  Wisconsin: "2026-10-14T00:00:00.000Z",
-  "New York": "2026-10-24T00:00:00.000Z"
+  Arizona: '2026-10-05T00:00:00.000Z',
+  Georgia: '2026-10-06T00:00:00.000Z',
+  Wisconsin: '2026-10-14T00:00:00.000Z',
+  'New York': '2026-10-24T00:00:00.000Z',
 };
 
 const DeadlineCalculator = () => {
-  const [state, setState] = useState("Wisconsin");
+  const [state, setState] = useState('Wisconsin');
   const result = useMemo(
-    () => calculateDeadline(state, stateDeadlines[state]),
-    [state]
+    () =>
+      calculateDeadline(
+        state,
+        stateDeadlines[state] ?? stateDeadlines.Wisconsin ?? '2026-10-14T00:00:00.000Z',
+      ),
+    [state],
   );
 
   return (
@@ -32,17 +37,15 @@ const DeadlineCalculator = () => {
       </label>
       <div
         className={`mt-5 rounded-[18px] p-5 ${
-          result.urgency === "green"
-            ? "bg-[var(--civic-green-light)]"
-            : result.urgency === "amber"
-              ? "bg-[var(--civic-amber-light)]"
-              : "bg-[var(--civic-red-light)]"
+          result.urgency === 'green'
+            ? 'bg-[var(--civic-green-light)]'
+            : result.urgency === 'amber'
+              ? 'bg-[var(--civic-amber-light)]'
+              : 'bg-[var(--civic-red-light)]'
         }`}
       >
         <p className="font-bold text-[var(--ink)]">{result.deadlineLabel}</p>
-        <p className="mt-1 text-[var(--ink-secondary)]">
-          {result.daysRemaining} days left
-        </p>
+        <p className="mt-1 text-[var(--ink-secondary)]">{result.daysRemaining} days left</p>
       </div>
       <a
         href={result.officialUrl}

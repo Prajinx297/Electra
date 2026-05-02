@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { civicEvents } from "../../firebase/analytics";
-import { civicBus } from "../../events/civicEventBus";
-import { useFeatureFlag } from "../../hooks/useFeatureFlag";
-import type { CivicBadge, CivicScoreResponse } from "../../types";
+import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+import { civicBus } from '../../events/civicEventBus';
+import { civicEvents } from '../../firebase/analytics';
+import { useFeatureFlag } from '../../hooks/useFeatureFlag';
+import type { CivicBadge, CivicScoreResponse } from '../../types';
 
 interface CivicScoreCardProps {
   open: boolean;
@@ -11,12 +12,38 @@ interface CivicScoreCardProps {
 }
 
 const badges: CivicBadge[] = [
-  { id: "civic-newcomer", label: "Civic Newcomer", threshold: 50, icon: "Ballot", earned: false },
-  { id: "informed-voter", label: "Informed Voter", threshold: 200, icon: "Checklist", earned: false },
-  { id: "civic-champion", label: "Civic Champion", threshold: 500, icon: "Scales", earned: false },
-  { id: "democracy-defender", label: "Democracy Defender", threshold: 1000, icon: "Capitol", earned: false },
-  { id: "constitutional-scholar", label: "Constitutional Scholar", threshold: 2000, icon: "Scroll", earned: false }
+  { id: 'civic-newcomer', label: 'Civic Newcomer', threshold: 50, icon: 'Ballot', earned: false },
+  {
+    id: 'informed-voter',
+    label: 'Informed Voter',
+    threshold: 200,
+    icon: 'Checklist',
+    earned: false,
+  },
+  { id: 'civic-champion', label: 'Civic Champion', threshold: 500, icon: 'Scales', earned: false },
+  {
+    id: 'democracy-defender',
+    label: 'Democracy Defender',
+    threshold: 1000,
+    icon: 'Capitol',
+    earned: false,
+  },
+  {
+    id: 'constitutional-scholar',
+    label: 'Constitutional Scholar',
+    threshold: 2000,
+    icon: 'Scroll',
+    earned: false,
+  },
 ];
+
+const fallbackBadge: CivicBadge = badges[0] ?? {
+  id: 'civic-newcomer',
+  label: 'Civic Newcomer',
+  threshold: 50,
+  icon: 'Ballot',
+  earned: false,
+};
 
 const eventPoints: Record<string, number> = {
   score_shared: 20,
@@ -25,7 +52,7 @@ const eventPoints: Record<string, number> = {
 const getBadgesForScore = (score: number) =>
   badges.map((badge) => ({
     ...badge,
-    earned: score >= badge.threshold
+    earned: score >= badge.threshold,
   }));
 
 const getHighestBadge = (score: number) =>
@@ -34,16 +61,16 @@ const getHighestBadge = (score: number) =>
     .at(-1) ?? null;
 
 const getNextBadge = (score: number) =>
-  badges.find((badge) => score < badge.threshold) ?? badges.at(-1)!;
+  badges.find((badge) => score < badge.threshold) ?? badges.at(-1) ?? fallbackBadge;
 
 const loadLocalScore = (): CivicScoreResponse => {
-  const raw = window.localStorage.getItem("electra:civic-score");
+  const raw = window.localStorage.getItem('electra:civic-score');
   if (!raw) {
     return {
       score: 0,
       badges: getBadgesForScore(0),
       streakDays: 1,
-      highestBadge: null
+      highestBadge: null,
     };
   }
 
@@ -51,21 +78,21 @@ const loadLocalScore = (): CivicScoreResponse => {
   return {
     ...parsed,
     badges: getBadgesForScore(parsed.score),
-    highestBadge: getHighestBadge(parsed.score)
+    highestBadge: getHighestBadge(parsed.score),
   };
 };
 
 const saveLocalScore = (score: CivicScoreResponse) => {
-  window.localStorage.setItem("electra:civic-score", JSON.stringify(score));
+  window.localStorage.setItem('electra:civic-score', JSON.stringify(score));
 };
 
 export const CivicScoreCard = ({ open, onClose }: CivicScoreCardProps) => {
-  const enabled = useFeatureFlag("civic_score_enabled");
+  const enabled = useFeatureFlag('civic_score_enabled');
   const [scoreState, setScoreState] = useState<CivicScoreResponse>(() => loadLocalScore());
   const [shareOpen, setShareOpen] = useState(false);
   const [levelUp, setLevelUp] = useState<CivicBadge | null>(null);
   const shareRef = useRef<HTMLDivElement>(null);
-  const highestBadge = scoreState.highestBadge ?? badges[0];
+  const highestBadge = scoreState.highestBadge ?? fallbackBadge;
   const nextBadge = getNextBadge(scoreState.score);
   const progress = Math.min(100, Math.round((scoreState.score / nextBadge.threshold) * 100));
   const circumference = 2 * Math.PI * 48;
@@ -73,28 +100,30 @@ export const CivicScoreCard = ({ open, onClose }: CivicScoreCardProps) => {
 
   const applyScore = (points: number, reason: string) => {
     setScoreState((current) => {
-      const previousBadges = current.badges.filter((badge) => badge.earned).map((badge) => badge.id);
+      const previousBadges = current.badges
+        .filter((badge) => badge.earned)
+        .map((badge) => badge.id);
       const nextScore = current.score + points;
       const nextBadges = getBadgesForScore(nextScore);
-      const newlyUnlocked = nextBadges.filter(
-        (badge) => badge.earned && !previousBadges.includes(badge.id)
+      const newlyUnlocked = nextBadges.find(
+        (badge) => badge.earned && !previousBadges.includes(badge.id),
       );
       const nextState: CivicScoreResponse = {
         score: nextScore,
         badges: nextBadges,
         streakDays: Math.max(current.streakDays, 1),
-        highestBadge: getHighestBadge(nextScore)
+        highestBadge: getHighestBadge(nextScore),
       };
-      if (newlyUnlocked[0]) {
-        setLevelUp(newlyUnlocked[0]);
-        civicBus.emit({ type: "BADGE_UNLOCKED", payload: { badge: newlyUnlocked[0] } });
+      if (newlyUnlocked) {
+        setLevelUp(newlyUnlocked);
+        civicBus.emit({ type: 'BADGE_UNLOCKED', payload: { badge: newlyUnlocked } });
       }
 
-      void fetch("/api/civic-score/event", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: reason, points })
-      }).catch(() => undefined);
+      void fetch('/api/civic-score/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: reason, points }),
+      }).catch(() => {});
 
       saveLocalScore(nextState);
       return nextState;
@@ -109,7 +138,7 @@ export const CivicScoreCard = ({ open, onClose }: CivicScoreCardProps) => {
 
   useEffect(() => {
     if (!levelUp) {
-      return undefined;
+      return;
     }
     const timer = window.setTimeout(() => setLevelUp(null), 2600);
     return () => window.clearTimeout(timer);
@@ -118,12 +147,12 @@ export const CivicScoreCard = ({ open, onClose }: CivicScoreCardProps) => {
   const shareText = useMemo(
     () =>
       `I'm an informed voter powered by ELECTRA. Civic Score: ${scoreState.score}. Badge: ${highestBadge.label}.`,
-    [highestBadge.label, scoreState.score]
+    [highestBadge.label, scoreState.score],
   );
 
   const handleShare = async () => {
     setShareOpen(true);
-    applyScore(eventPoints.score_shared, "Share civic score");
+    applyScore(eventPoints.score_shared ?? 20, 'Share civic score');
     civicEvents.civicScoreShared(scoreState.score, highestBadge.label);
 
     if (navigator.clipboard) {
@@ -170,8 +199,20 @@ export const CivicScoreCard = ({ open, onClose }: CivicScoreCardProps) => {
 
           <div className="mt-6 grid gap-6 md:grid-cols-[220px_1fr]">
             <div className="flex flex-col items-center rounded-lg bg-[var(--surface-2)] p-5">
-              <svg width="140" height="140" viewBox="0 0 120 120" aria-label={`${scoreState.score} civic points`}>
-                <circle cx="60" cy="60" r="48" stroke="var(--border)" strokeWidth="10" fill="none" />
+              <svg
+                width="140"
+                height="140"
+                viewBox="0 0 120 120"
+                aria-label={`${scoreState.score} civic points`}
+              >
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="48"
+                  stroke="var(--border)"
+                  strokeWidth="10"
+                  fill="none"
+                />
                 <motion.circle
                   cx="60"
                   cy="60"
@@ -184,12 +225,19 @@ export const CivicScoreCard = ({ open, onClose }: CivicScoreCardProps) => {
                   animate={{ strokeDashoffset: dashOffset }}
                   transform="rotate(-90 60 60)"
                 />
-                <text x="60" y="66" textAnchor="middle" className="fill-[var(--ink)] text-2xl font-bold">
+                <text
+                  x="60"
+                  y="66"
+                  textAnchor="middle"
+                  className="fill-[var(--ink)] text-2xl font-bold"
+                >
                   {scoreState.score}
                 </text>
               </svg>
               <p className="mt-3 text-sm font-semibold">{scoreState.streakDays} day streak</p>
-              <p className="text-sm text-[var(--ink-secondary)]">Highest badge: {highestBadge.label}</p>
+              <p className="text-sm text-[var(--ink-secondary)]">
+                Highest badge: {highestBadge.label}
+              </p>
             </div>
 
             <div>
@@ -197,15 +245,17 @@ export const CivicScoreCard = ({ open, onClose }: CivicScoreCardProps) => {
                 {scoreState.badges.map((badge) => (
                   <motion.div
                     key={badge.id}
-                    animate={badge.earned ? { boxShadow: "0 0 24px rgba(45,125,90,0.28)" } : undefined}
+                    {...(badge.earned
+                      ? { animate: { boxShadow: '0 0 24px rgba(45,125,90,0.28)' } }
+                      : {})}
                     className={`rounded-lg border p-4 ${
                       badge.earned
-                        ? "border-[var(--civic-green)] bg-[var(--civic-green-light)]"
-                        : "border-[var(--border)] bg-[var(--surface-2)] opacity-65"
+                        ? 'border-[var(--civic-green)] bg-[var(--civic-green-light)]'
+                        : 'border-[var(--border)] bg-[var(--surface-2)] opacity-65'
                     }`}
                   >
                     <p className="text-xs font-bold uppercase tracking-[0.08em]">
-                      {badge.earned ? badge.icon : "Locked"}
+                      {badge.earned ? badge.icon : 'Locked'}
                     </p>
                     <p className="mt-1 font-bold">{badge.label}</p>
                     <p className="text-sm text-[var(--ink-secondary)]">{badge.threshold} pts</p>
@@ -225,10 +275,7 @@ export const CivicScoreCard = ({ open, onClose }: CivicScoreCardProps) => {
 
           {shareOpen ? (
             <div className="mt-6 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-4">
-              <div
-                ref={shareRef}
-                className="rounded-lg bg-white p-5 text-[#101217] shadow-inner"
-              >
+              <div ref={shareRef} className="rounded-lg bg-white p-5 text-[#101217] shadow-inner">
                 <p className="text-sm font-bold text-[#2d7d5a]">ELECTRA</p>
                 <p className="mt-3 text-2xl font-bold">Civic Score {scoreState.score}</p>
                 <p className="mt-1">{highestBadge.label}</p>
@@ -239,7 +286,7 @@ export const CivicScoreCard = ({ open, onClose }: CivicScoreCardProps) => {
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <a
-                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent("https://electra.app")}`}
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://electra.app')}`}
                   className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm font-semibold"
                 >
                   LinkedIn

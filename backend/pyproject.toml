@@ -35,6 +35,9 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+filterwarnings = [
+    "ignore:Type google\\._upb\\._message\\..*:DeprecationWarning"
+]
 
 [tool.ruff]
 line-length = 88

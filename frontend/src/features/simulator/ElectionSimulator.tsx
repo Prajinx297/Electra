@@ -1,38 +1,39 @@
-import { useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { StreamingOraclePanel } from "../streaming/StreamingOraclePanel";
-import { persistSimulationState } from "../../firebase/firestore";
-import { civicEvents } from "../../firebase/analytics";
-import { civicBus } from "../../events/civicEventBus";
-import { useFeatureFlag } from "../../hooks/useFeatureFlag";
-import { useElectraStore } from "../../engines/stateEngine";
+import { AnimatePresence, motion } from 'framer-motion';
+import { useMemo, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
+import { useElectraStore } from '../../engines/stateEngine';
+import { civicBus } from '../../events/civicEventBus';
+import { civicEvents } from '../../firebase/analytics';
+import { persistSimulationState } from '../../firebase/firestore';
+import { useFeatureFlag } from '../../hooks/useFeatureFlag';
 import type {
   AuditResult,
   BallotEvent,
   BallotSelection,
   CertificationEvent,
   OracleRequest,
-  TallyResult
-} from "../../types";
+  TallyResult,
+} from '../../types';
+import { StreamingOraclePanel } from '../streaming/StreamingOraclePanel';
 
 interface ElectionSimulatorProps {
   onClose: () => void;
 }
 
 const stages = [
-  "Ballot Design & Ingestion",
-  "Tallying Engine",
-  "Canvass & Certification",
-  "Post-Election Audit"
+  'Ballot Design & Ingestion',
+  'Tallying Engine',
+  'Canvass & Certification',
+  'Post-Election Audit',
 ];
 
 const fallbackBallot = (): BallotEvent => ({
   serial: `EL-${Math.floor(Math.random() * 900000 + 100000)}`,
-  precinct: "PCT-014",
+  precinct: 'PCT-014',
   timestamp: new Date().toISOString(),
-  encryptedPayload: Array.from({ length: 96 }, () => Math.round(Math.random()).toString()).join(""),
-  signature: crypto.randomUUID()
+  encryptedPayload: Array.from({ length: 96 }, () => Math.round(Math.random()).toString()).join(''),
+  signature: crypto.randomUUID(),
 });
 
 const fallbackTally = (anomalyInjected: boolean): TallyResult => ({
@@ -41,22 +42,22 @@ const fallbackTally = (anomalyInjected: boolean): TallyResult => ({
   confidenceInterval: anomalyInjected ? 4.8 : 1.2,
   anomalyInjected,
   totals: [
-    { candidate: "Rivera", votes: anomalyInjected ? 6100 : 5840 },
-    { candidate: "Chen", votes: anomalyInjected ? 6722 : 6018 },
-    { candidate: "Patel", votes: anomalyInjected ? 1020 : 852 }
+    { candidate: 'Rivera', votes: anomalyInjected ? 6100 : 5840 },
+    { candidate: 'Chen', votes: anomalyInjected ? 6722 : 6018 },
+    { candidate: 'Patel', votes: anomalyInjected ? 1020 : 852 },
   ],
-  affectedPrecinct: anomalyInjected ? "PCT-044" : undefined
+  affectedPrecinct: anomalyInjected ? 'PCT-044' : undefined,
 });
 
 const fallbackCertification = (): CertificationEvent => ({
   certifiedAt: new Date().toISOString(),
   certificateId: `CERT-${Math.floor(Math.random() * 90000 + 10000)}`,
   provenanceChain: [
-    "Precinct event frame signed",
-    "County canvass board reviewed",
-    "State certification ledger appended"
+    'Precinct event frame signed',
+    'County canvass board reviewed',
+    'State certification ledger appended',
   ],
-  summary: "Mock certification complete with provenance chain attached."
+  summary: 'Mock certification complete with provenance chain attached.',
 });
 
 const fallbackAudit = (): AuditResult => ({
@@ -64,15 +65,15 @@ const fallbackAudit = (): AuditResult => ({
   machineCount: 187,
   handCount: 187,
   discrepancy: 0,
-  recommendation: "No material discrepancy found. Preserve chain of custody records."
+  recommendation: 'No material discrepancy found. Preserve chain of custody records.',
 });
 
 async function postJson<T>(url: string, body: unknown, fallback: () => T): Promise<T> {
   try {
     const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -86,14 +87,14 @@ async function postJson<T>(url: string, body: unknown, fallback: () => T): Promi
 }
 
 export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
-  const enabled = useFeatureFlag("election_simulator_enabled");
-  const anomalyEnabled = useFeatureFlag("simulator_anomaly_injection");
+  const enabled = useFeatureFlag('election_simulator_enabled');
+  const anomalyEnabled = useFeatureFlag('simulator_anomaly_injection');
   const { currentState, history, cognitiveLevel, language, journeyId } = useElectraStore();
   const [stage, setStage] = useState(0);
   const [ballot, setBallot] = useState<BallotSelection>({
-    president: "Rivera",
-    senator: "Okafor",
-    measureA: "yes"
+    president: 'Rivera',
+    senator: 'Okafor',
+    measureA: 'yes',
   });
   const [ballotEvent, setBallotEvent] = useState<BallotEvent | null>(null);
   const [tally, setTally] = useState<TallyResult | null>(null);
@@ -109,9 +110,9 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
       history,
       cognitiveLevel,
       language,
-      sessionId: journeyId
+      sessionId: journeyId,
     }),
-    [cognitiveLevel, currentState, history, journeyId, language, stage]
+    [cognitiveLevel, currentState, history, journeyId, language, stage],
   );
 
   if (!enabled) {
@@ -120,66 +121,66 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
 
   const chartData = (tally?.totals ?? fallbackTally(false).totals).map((entry) => ({
     candidate: entry.candidate,
-    votes: Math.round(entry.votes * (timeline / 100))
+    votes: Math.round(entry.votes * (timeline / 100)),
   }));
 
   const recordStageCompletion = (stepId: string) => {
-    civicBus.emit({ type: "STEP_COMPLETED", payload: { stepId, duration: 1 } });
+    civicBus.emit({ type: 'STEP_COMPLETED', payload: { stepId, duration: 1 } });
   };
 
   const handleSubmitBallot = async () => {
     const event = await postJson<BallotEvent>(
-      "/api/simulator/ingest",
-      { selection: ballot, precinct: "PCT-014" },
-      fallbackBallot
+      '/api/simulator/ingest',
+      { selection: ballot, precinct: 'PCT-014' },
+      fallbackBallot,
     );
     setBallotEvent(event);
     setStage(1);
-    recordStageCompletion("simulator_ingest");
+    recordStageCompletion('simulator_ingest');
   };
 
   const handleRunTally = async (withAnomaly: boolean) => {
     const result = await postJson<TallyResult>(
-      "/api/simulator/tally",
+      '/api/simulator/tally',
       { anomaly: withAnomaly, precincts: 88 },
-      () => fallbackTally(withAnomaly)
+      () => fallbackTally(withAnomaly),
     );
     setAnomalyInjected(withAnomaly);
     setTally(result);
-    recordStageCompletion("simulator_tally");
+    recordStageCompletion('simulator_tally');
   };
 
   const handleCertify = async () => {
     const result = await postJson<CertificationEvent>(
-      "/api/simulator/certify",
+      '/api/simulator/certify',
       tally ?? fallbackTally(anomalyInjected),
-      fallbackCertification
+      fallbackCertification,
     );
     setCertification(result);
     setStage(3);
-    recordStageCompletion("simulator_certify");
+    recordStageCompletion('simulator_certify');
   };
 
   const handleAudit = async () => {
     const result = await postJson<AuditResult>(
-      "/api/simulator/audit",
+      '/api/simulator/audit',
       { sampleSize: 312, tally: tally ?? fallbackTally(anomalyInjected) },
-      fallbackAudit
+      fallbackAudit,
     );
     setAudit(result);
     civicEvents.simulatorCompleted(anomalyInjected);
     civicBus.emit({
-      type: "SCORE_EARNED",
-      payload: { points: 100, reason: "Run election simulator" }
+      type: 'SCORE_EARNED',
+      payload: { points: 100, reason: 'Run election simulator' },
     });
     await persistSimulationState(journeyId, {
       ballotEvent,
       tally,
       certification,
       audit: result,
-      completedAt: new Date().toISOString()
+      completedAt: new Date().toISOString(),
     });
-    recordStageCompletion("simulator_audit");
+    recordStageCompletion('simulator_audit');
   };
 
   return (
@@ -206,7 +207,7 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
               type="button"
               onClick={() => setStage(index)}
               className={`min-h-10 rounded-lg px-3 text-sm font-semibold ${
-                index === stage ? "bg-white text-[#06111f]" : "bg-white/10 text-white"
+                index === stage ? 'bg-white text-[#06111f]' : 'bg-white/10 text-white'
               }`}
             >
               {index + 1}
@@ -262,7 +263,7 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
                   <fieldset className="mt-4">
                     <legend className="text-sm">Local Measure A</legend>
                     <div className="mt-2 flex gap-2">
-                      {(["yes", "no"] as const).map((choice) => (
+                      {(['yes', 'no'] as const).map((choice) => (
                         <button
                           key={choice}
                           type="button"
@@ -270,8 +271,8 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
                           aria-pressed={ballot.measureA === choice}
                           className={`min-h-12 flex-1 rounded-lg px-3 font-bold ${
                             ballot.measureA === choice
-                              ? "bg-sky-300 text-[#06111f]"
-                              : "bg-white/10 text-white"
+                              ? 'bg-sky-300 text-[#06111f]'
+                              : 'bg-white/10 text-white'
                           }`}
                         >
                           {choice.toUpperCase()}
@@ -295,7 +296,9 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
                       <p>Serial: {ballotEvent.serial}</p>
                       <p>Precinct: {ballotEvent.precinct}</p>
                       <p>Timestamp: {ballotEvent.timestamp}</p>
-                      <p className="break-all font-mono text-emerald-200">{ballotEvent.encryptedPayload}</p>
+                      <p className="break-all font-mono text-emerald-200">
+                        {ballotEvent.encryptedPayload}
+                      </p>
                     </div>
                   ) : (
                     <motion.p
@@ -382,8 +385,16 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
               <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
                 <div className="rounded-lg border border-white/10 bg-white/10 p-5">
                   <h3 className="text-xl font-bold">Canvass checklist</h3>
-                  {["Signature verification", "Provisional ballot review", "Precinct reconciliation", "Public board meeting"].map((item) => (
-                    <details key={item} className="mt-3 rounded-lg border border-white/10 bg-black/20 p-4">
+                  {[
+                    'Signature verification',
+                    'Provisional ballot review',
+                    'Precinct reconciliation',
+                    'Public board meeting',
+                  ].map((item) => (
+                    <details
+                      key={item}
+                      className="mt-3 rounded-lg border border-white/10 bg-black/20 p-4"
+                    >
                       <summary className="cursor-pointer font-semibold">{item}</summary>
                       <p className="mt-3 text-sm text-slate-200">
                         Audit Trail: clerk initials, timestamp, ledger hash, observer note.
@@ -405,7 +416,9 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
                       <p>{certification.certificateId}</p>
                       <p>{certification.summary}</p>
                       {certification.provenanceChain.map((item) => (
-                        <p key={item} className="rounded bg-white/10 p-2">{item}</p>
+                        <p key={item} className="rounded bg-white/10 p-2">
+                          {item}
+                        </p>
                       ))}
                     </div>
                   ) : (
@@ -431,17 +444,23 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
                   </button>
                   {audit ? (
                     <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
-                      <div className="rounded-lg bg-black/20 p-3">Machine: {audit.machineCount}</div>
+                      <div className="rounded-lg bg-black/20 p-3">
+                        Machine: {audit.machineCount}
+                      </div>
                       <div className="rounded-lg bg-black/20 p-3">Hand: {audit.handCount}</div>
-                      <div className="rounded-lg bg-black/20 p-3">Sampled: {audit.ballotsSampled}</div>
-                      <div className="rounded-lg bg-black/20 p-3">Discrepancy: {audit.discrepancy}</div>
+                      <div className="rounded-lg bg-black/20 p-3">
+                        Sampled: {audit.ballotsSampled}
+                      </div>
+                      <div className="rounded-lg bg-black/20 p-3">
+                        Discrepancy: {audit.discrepancy}
+                      </div>
                     </div>
                   ) : null}
                 </div>
                 <div className="rounded-lg border border-white/10 bg-white p-6 text-[#06111f]">
                   <h3 className="text-xl font-bold">Audit Report</h3>
                   <p className="mt-3 text-sm">
-                    {audit?.recommendation ?? "Run the audit to generate the PDF-style summary."}
+                    {audit?.recommendation ?? 'Run the audit to generate the PDF-style summary.'}
                   </p>
                   <button
                     type="button"
@@ -457,11 +476,7 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
         </AnimatePresence>
 
         <aside className="space-y-4">
-          <StreamingOraclePanel
-            key={stage}
-            request={narrationRequest}
-            sessionId={journeyId}
-          />
+          <StreamingOraclePanel key={stage} request={narrationRequest} sessionId={journeyId} />
         </aside>
       </div>
     </motion.section>

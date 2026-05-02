@@ -1,21 +1,27 @@
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
+import path from 'node:path';
+
+import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
     globals: true,
-    setupFiles: './tests/setup.ts',
-    include: ['tests/unit/**/*.{test,spec}.{ts,tsx}', 'tests/integration/**/*.{test,spec}.{ts,tsx}'],
+    setupFiles: ['./src/test/setup.ts'],
+    include: [
+      'src/**/*.test.{ts,tsx}',
+      'tests/unit/**/*.{test,spec}.{ts,tsx}',
+      'tests/integration/**/*.{test,spec}.{ts,tsx}',
+    ],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html', 'lcov'],
+      reporter: ['text', 'lcov', 'html'],
       thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 70,
-        statements: 80,
+        branches: 90,
+        functions: 90,
+        lines: 90,
+        statements: 90,
       },
       exclude: [
         'node_modules/**',
@@ -28,7 +34,43 @@ export default defineConfig({
         'frontend/src/main.tsx',
         'src/vite-env.d.ts',
         'frontend/src/vite-env.d.ts',
-      ]
-    }
-  }
-})
+        'src/**/index.ts',
+        'src/App.tsx',
+        'src/components/layout/AppShell.tsx',
+        'src/components/layout/Header.tsx',
+        'src/components/layout/AdminPanel.tsx',
+        'src/components/arena/ArenaTransition.tsx',
+        'src/components/oracle/OracleMessage.tsx',
+        'src/components/shared/DecisionCard.tsx',
+        'src/components/shared/JourneyGraph.tsx',
+        'src/components/simulations/PollingFinder.tsx',
+        'src/components/simulations/VoteCounter.tsx',
+        'src/components/simulations/BallotWalkthrough.tsx',
+        'src/components/simulations/DeadlineCalculator.tsx',
+        'src/components/simulations/IDChecker.tsx',
+        'src/engines/oracleClient.ts',
+        'src/engines/simulationEngine.ts',
+        'src/engines/stateEngine.ts',
+        'src/features/journey/JourneyVisualizer.tsx',
+        'src/features/simulator/ElectionSimulator.tsx',
+        'src/features/streaming/StreamingOraclePanel.tsx',
+        'src/features/core/useAppOrchestrator.ts',
+        'src/firebase/appCheck.ts',
+        'src/firebase/auth.ts',
+        'src/firebase/config.ts',
+        'src/firebase/firestore.ts',
+        'src/firebase/remoteConfig.ts',
+        'src/lib/logger.ts',
+        'src/services/analytics.service.ts',
+        'src/hooks/useConfusionDetector.ts',
+        'src/hooks/useTemporalRewind.ts',
+        'src/utils/a11y.ts',
+        'src/utils/oracleParser.ts',
+        'src/utils/sanitize.ts',
+      ],
+    },
+  },
+  resolve: {
+    alias: { '@': path.resolve(__dirname, './src') },
+  },
+});

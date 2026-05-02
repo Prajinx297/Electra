@@ -1,5 +1,5 @@
-import { flagSourceAsOutdated } from "../../firebase/firestore";
-import type { TrustMetadata } from "../../types";
+import { flagSourceAsOutdated } from '../../firebase/firestore';
+import type { TrustMetadata } from '../../types';
 
 interface TrustPanelProps {
   sessionId: string;
@@ -7,18 +7,19 @@ interface TrustPanelProps {
 }
 
 const fallbackTrust: TrustMetadata = {
-  confidence: 0.85,
-  lastVerified: "2026-04-30",
-  rationale: "This answer uses Electra's civic workflow model and should be checked against your District Election Office for final deadlines.",
+  confidence: 0.82,
+  lastVerified: '2026-04-30',
+  rationale:
+    "This answer uses Electra's civic workflow model and should be checked against your District Election Office for final deadlines.",
   sources: [
     {
-      id: "eci-gov-voting",
-      title: "Election Commission of India",
-      publisher: "ECI",
-      url: "https://www.eci.gov.in",
-      lastVerified: "2026-04-30"
-    }
-  ]
+      id: 'eci-gov-voting',
+      title: 'Voting and elections',
+      publisher: 'ECI',
+      url: 'https://www.eci.gov.in',
+      lastVerified: '2026-04-30',
+    },
+  ],
 };
 
 export const TrustPanel = ({ sessionId, trust = fallbackTrust }: TrustPanelProps) => {
@@ -26,7 +27,7 @@ export const TrustPanel = ({ sessionId, trust = fallbackTrust }: TrustPanelProps
     await flagSourceAsOutdated({
       sessionId,
       sourceId,
-      reason: "User flagged source as outdated"
+      reason: 'User flagged source as outdated',
     });
   };
 

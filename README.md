@@ -1,68 +1,82 @@
-# ELECTRA — Civic Intelligence OS
+# Electra - Civic Intelligence OS
 
-![Coverage](https://img.shields.io/badge/coverage-98%25-brightgreen.svg) ![Lighthouse](https://img.shields.io/badge/lighthouse-95%2B-brightgreen.svg)
+> Solving democratic confusion for India's 950M eligible voters through
+> an Agentic UI system powered by Gemini AI, Firebase, and Google Cloud.
 
-## The Problem
-India has 950+ million eligible voters, yet many first-time and rural voters 
-struggle with the process. Existing tools are built for people who already know the system.
-ELECTRA solves the CONFUSION problem — not the information problem.
+## Problem -> Solution Traceability
 
-## What Makes ELECTRA Different
-Not a website. Not a chatbot. An **Agentic UI System** where the AI Oracle 
-dynamically controls which React components are rendered in real time.
-
-## Novel Patterns Implemented
-- **Agentic UI**: LLM-controlled DOM rendering via structured JSON
-- **Temporal Rewind Engine**: time-travel through civic decision history
-- **Confusion Heatmap**: passive UX research layer via Firebase Analytics
-- **Predictive Shadow Rendering**: AI prefetches next component
-- **Consequence Propagation Tree**: mistakes shown as navigable option trees
+| Identified Problem | Electra Solution | Implementation |
+|---|---|---|
+| 950M voters face multi-step confusion | Agentic UI dynamically routes journey | Oracle JSON controls React component tree via ComponentRegistry |
+| Users cannot tell when they are lost | Passive Confusion Heatmap | civicBus + Firebase Analytics tracks rereads, retreats, timeouts |
+| LLM latency breaks user flow | Predictive Shadow Rendering | Pre-fetches components based on Oracle predictedNextKeys |
+| One-size explanations fail | Adaptive Cognitive Levels | 3 reading levels (simple/detailed/legal), real-time Gemini rewrite |
+| Mid-journey mistakes cause dropout | Temporal Rewind Engine | DAG-based journey state with time-travel to any prior node |
+| Election process opacity | Election Integrity Simulator | Step-by-step voting simulation with anomaly injection |
 
 ## Architecture
-```mermaid
-graph TD
-    User([User]) -->|Input| OP[OraclePanel]
-    OP -->|POST /api/oracle| FA[FastAPI]
-    FA -->|Prompt + State| CA[Gemini API]
-    CA -->|Structured JSON| FA
-    FA -->|Response| OP
-    OP -->|Render Key| CR[ComponentRegistry]
-    CR -->|Mount Component| AP[ArenaPanel]
-    AP -->|Interaction| ZS[Zustand State Machine]
-    ZS -->|Sync| FS[(Firestore)]
-    AP -->|UX Events| FB[(Firebase Analytics)]
+
+```text
+User
+  |
+  v
+React Frontend
+  |
+  | sanitized civic query + journey state
+  v
+FastAPI Oracle API
+  |
+  | guarded prompt + cache key
+  v
+Gemini LLM
+  |
+  | strict JSON
+  v
+Pydantic Response Validation
+  |
+  | render_key + component_props
+  v
+ComponentRegistry
+  |
+  +--> Dynamic Civic Module
+  |
+  +--> Firebase Firestore sync
+  |
+  +--> Firebase Analytics confusion events
 ```
 
-## Skills Demonstrated
-- Agentic UI Architecture (LLM-controlled interfaces)
-- Finite State Machine design (45 states, guard conditions)
-- Firebase full-stack integration (Auth + Firestore + Analytics + Maps)
-- Civic accessibility design (WCAG AA/AAA, multi-language)
-- Passive UX research engineering (confusion heatmap)
+## Tech Stack
 
-## Impact Projection
-- Journey completion rate tracked in real time
-- Confusion heatmap identifies highest drop-off steps
-- Architecture scales to any Indian state's election system
-- Self-improving: heatmap data tunes Oracle prompts over time
+React + TypeScript powers a fast, accessible, type-safe civic interface. Vite keeps builds small and quick for public-sector deployment speed. Zustand stores journey state with selector-based rendering so dynamic Oracle updates do not repaint the entire app. Vitest and React Testing Library validate hooks, services, accessibility contracts, and component behavior.
 
-## Roadmap
-- **v2**: Election Commission of India API integration (real data)
-- **v2**: Voter registration via NVSP portal integration
-- **v3**: 22+ official Indian languages via Oracle language switching
-- **v3**: SMS-based Oracle for users without smartphones
+FastAPI gives the backend an explicit OpenAPI surface, async request handling, and clean dependency injection. Pydantic v2 validates every Oracle request and response before it reaches the interface. mypy and ruff protect backend quality.
 
-## Setup (5 commands)
+Firebase Auth supports anonymous and Google sign-in without blocking first-time users. Firestore syncs session and score state. Firebase Analytics records confusion events that help improve the civic journey. Gemini acts as the reasoning layer, while Google Cloud Run is the deployment target for a containerized API.
+
+## Google Services Integration
+
+- Firebase Auth (Anonymous + Google OAuth)
+- Firebase Firestore (journey state sync)
+- Firebase Analytics (confusion heatmap)
+- Google Cloud Run (containerized deployment)
+- Google Cloud Logging + Error Reporting
+- Gemini 1.5 Pro (Oracle reasoning engine)
+
+## Local Development
+
 ```bash
-git clone https://github.com/Prajinx297/Electra.git
-cd Electra && cp .env.example .env  # add your API keys
-cd backend && pip install -r requirements.txt && uvicorn main:app
-cd ../frontend && npm install && npm run dev
+npm install
+npm --prefix frontend install
+python -m pip install -r backend/requirements.txt
+npm run dev
 ```
 
-## Tests
+## Verification
+
 ```bash
-npm run test          # Vitest unit + integration
-npm run test:e2e      # Playwright E2E
-npm run test:coverage # coverage report
+npm run type-check
+npm run lint
+npm run test
+npm run build
+cd backend && python -m mypy app/ && python -m pytest tests/ -v --cov=app --cov-report=term-missing && python -m ruff check .
 ```

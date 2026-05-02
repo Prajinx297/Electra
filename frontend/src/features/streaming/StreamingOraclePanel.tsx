@@ -1,18 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { streamOracle } from "../../engines/oracleClient";
-import { measureStreamingLatency } from "../../firebase/performance";
-import { civicBus } from "../../events/civicEventBus";
-import { TrustPanel } from "../trust/TrustPanel";
-import type { OracleRequest, OracleResponse, TrustMetadata } from "../../types";
+import { AnimatePresence, motion } from 'framer-motion';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { streamOracle } from '../../engines/oracleClient';
+import { civicBus } from '../../events/civicEventBus';
+import { measureStreamingLatency } from '../../firebase/performance';
+import type { OracleRequest, OracleResponse, TrustMetadata } from '../../types';
+import { TrustPanel } from '../trust/TrustPanel';
 
 interface StreamingProps {
   request: OracleRequest;
   sessionId: string;
-  token?: string | null;
-  onComplete?: (response: OracleResponse) => void;
-  onError?: (message: string) => void;
-  onRetry?: () => void;
+  token?: string | null | undefined;
+  onComplete?: ((response: OracleResponse) => void) | undefined;
+  onError?: ((message: string) => void) | undefined;
+  onRetry?: (() => void) | undefined;
 }
 
 const waitForCharacter = () =>
@@ -23,28 +24,28 @@ const waitForCharacter = () =>
 const createResponseFromStream = (
   request: OracleRequest,
   message: string,
-  trust: TrustMetadata | null
+  trust: TrustMetadata | null,
 ): OracleResponse => ({
   message,
-  tone: "informative",
+  tone: 'informative',
   render: null,
   renderProps: {},
   primaryAction: {
-    label: "Keep going",
-    action: "continue"
+    label: 'Keep going',
+    action: 'continue',
   },
   secondaryAction: null,
   progress: {
     step: 1,
     total: 1,
-    label: "Oracle response"
+    label: 'Oracle response',
   },
   proactiveWarning: null,
   stateTransition: request.currentState,
   cognitiveLevel: request.cognitiveLevel,
   nextAnticipated: null,
-  confidence: trust?.confidence,
-  trust: trust ?? undefined
+  confidence: trust?.confidence ?? 0.9,
+  trust: trust ?? undefined,
 });
 
 export const StreamingOraclePanel = ({
@@ -53,16 +54,16 @@ export const StreamingOraclePanel = ({
   token,
   onComplete,
   onError,
-  onRetry
+  onRetry,
 }: StreamingProps) => {
-  const [buffer, setBuffer] = useState("");
+  const [buffer, setBuffer] = useState('');
   const [streaming, setStreaming] = useState(false);
   const [trust, setTrust] = useState<TrustMetadata | null>(null);
   const [stopped, setStopped] = useState(false);
   const [interrupted, setInterrupted] = useState(false);
-  const [finalAnnouncement, setFinalAnnouncement] = useState("");
+  const [finalAnnouncement, setFinalAnnouncement] = useState('');
   const abortRef = useRef<AbortController | null>(null);
-  const bufferRef = useRef("");
+  const bufferRef = useRef('');
   const trustRef = useRef<TrustMetadata | null>(null);
 
   const appendDelta = useCallback(async (delta: string, signal: AbortSignal) => {
@@ -83,13 +84,13 @@ export const StreamingOraclePanel = ({
     let firstTokenSeen = false;
 
     abortRef.current = controller;
-    bufferRef.current = "";
+    bufferRef.current = '';
     trustRef.current = null;
-    setBuffer("");
+    setBuffer('');
     setTrust(null);
     setStopped(false);
     setInterrupted(false);
-    setFinalAnnouncement("");
+    setFinalAnnouncement('');
     setStreaming(true);
     latencyTrace.start();
 
@@ -116,7 +117,7 @@ export const StreamingOraclePanel = ({
 
           setStreaming(false);
           setFinalAnnouncement(bufferRef.current);
-          civicBus.emit({ type: "ORACLE_RESPONSE", payload: finalResponse });
+          civicBus.emit({ type: 'ORACLE_RESPONSE', payload: finalResponse });
           onComplete?.(finalResponse);
           return;
         }
@@ -125,7 +126,7 @@ export const StreamingOraclePanel = ({
       const finalResponse = createResponseFromStream(request, bufferRef.current, trustRef.current);
       setStreaming(false);
       setFinalAnnouncement(bufferRef.current);
-      civicBus.emit({ type: "ORACLE_RESPONSE", payload: finalResponse });
+      civicBus.emit({ type: 'ORACLE_RESPONSE', payload: finalResponse });
       onComplete?.(finalResponse);
     } catch (error) {
       if (controller.signal.aborted) {
@@ -134,7 +135,7 @@ export const StreamingOraclePanel = ({
         setInterrupted(true);
         bufferRef.current = `${bufferRef.current}\n\n[Response interrupted]`;
         setBuffer(bufferRef.current);
-        onError?.(error instanceof Error ? error.message : "Oracle stream interrupted");
+        onError?.(error instanceof Error ? error.message : 'Oracle stream interrupted');
       }
       setStreaming(false);
     } finally {
@@ -153,7 +154,7 @@ export const StreamingOraclePanel = ({
     abortRef.current?.abort();
     setStreaming(false);
     setStopped(true);
-    onError?.("Response stopped");
+    onError?.('Response stopped');
   };
 
   return (
@@ -164,9 +165,7 @@ export const StreamingOraclePanel = ({
       className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_8px_24px_var(--shadow)]"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm font-bold uppercase tracking-[0.08em] text-[var(--accent)]">
-          Oracle
-        </p>
+        <p className="text-sm font-bold uppercase tracking-[0.08em] text-[var(--accent)]">Oracle</p>
         {streaming ? (
           <button
             type="button"

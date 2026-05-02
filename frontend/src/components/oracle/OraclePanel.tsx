@@ -1,24 +1,26 @@
-import { useState } from "react";
-import { OracleMessage } from "./OracleMessage";
-import { CognitiveLevelToggle } from "../shared/CognitiveLevelToggle";
-import { ProactiveWarning } from "../shared/ProactiveWarning";
-import { TrustPanel } from "../../features/trust/TrustPanel";
-import { StreamingOraclePanel } from "../../features/streaming/StreamingOraclePanel";
-import type { ChangeEvent } from "react";
-import type { CognitiveLevel, LanguageCode, OracleRequest, OracleResponse } from "../../types";
+import { useState } from 'react';
+import type { ChangeEvent } from 'react';
+
+import { StreamingOraclePanel } from '../../features/streaming/StreamingOraclePanel';
+import { TrustPanel } from '../../features/trust/TrustPanel';
+import type { CognitiveLevel, LanguageCode, OracleRequest, OracleResponse } from '../../types';
+import { CognitiveLevelToggle } from '../shared/CognitiveLevelToggle';
+import { ProactiveWarning } from '../shared/ProactiveWarning';
+
+import { OracleMessage } from './OracleMessage';
 
 interface OraclePanelProps {
   response: OracleResponse;
   language: LanguageCode;
   cognitiveLevel: CognitiveLevel;
-  busy?: boolean;
+  busy?: boolean | undefined;
   sessionId: string;
   stuckInterventionVisible: boolean;
-  streamRequest?: OracleRequest | null;
-  streamToken?: string | null;
+  streamRequest?: OracleRequest | null | undefined;
+  streamToken?: string | null | undefined;
   onAsk: (message: string) => Promise<void>;
-  onStreamComplete?: (response: OracleResponse) => void;
-  onStreamError?: (message: string) => void;
+  onStreamComplete?: ((response: OracleResponse) => void) | undefined;
+  onStreamError?: ((message: string) => void) | undefined;
   onCognitiveLevelChange: (level: CognitiveLevel) => void;
   onDismissStuck: () => void;
 }
@@ -36,9 +38,9 @@ export const OraclePanel = ({
   onStreamComplete,
   onStreamError,
   onCognitiveLevelChange,
-  onDismissStuck
+  onDismissStuck,
 }: OraclePanelProps) => {
-  const [question, setQuestion] = useState("");
+  const [question, setQuestion] = useState('');
 
   const handleQuestionChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setQuestion(event.target.value);
@@ -49,12 +51,12 @@ export const OraclePanel = ({
       return;
     }
     void onAsk(question);
-    setQuestion("");
+    setQuestion('');
   };
 
   const handleStuckHelp = () => {
     onDismissStuck();
-    void onAsk("I am stuck. Please make this simpler and tell me only the next action.");
+    void onAsk('I am stuck. Please make this simpler and tell me only the next action.');
   };
 
   return (
@@ -76,7 +78,9 @@ export const OraclePanel = ({
       ) : (
         <>
           <OracleMessage message={response.message} tone={response.tone} />
-          {response.proactiveWarning ? <ProactiveWarning message={response.proactiveWarning} /> : null}
+          {response.proactiveWarning ? (
+            <ProactiveWarning message={response.proactiveWarning} />
+          ) : null}
           {stuckInterventionVisible ? (
             <section className="rounded-[18px] border border-[var(--civic-amber)] bg-[var(--civic-amber-light)] p-4 text-[var(--ink)]">
               <p className="font-semibold">Stuck here?</p>
@@ -97,11 +101,15 @@ export const OraclePanel = ({
       <div className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[0_8px_24px_var(--shadow)]">
         <p className="text-sm font-semibold text-[var(--ink)]">Explanation style</p>
         <div className="mt-3">
-          <CognitiveLevelToggle value={cognitiveLevel} onChange={onCognitiveLevelChange} disabled={busy} />
+          <CognitiveLevelToggle
+            value={cognitiveLevel}
+            onChange={onCognitiveLevelChange}
+            disabled={busy}
+          />
         </div>
         <label className="mt-4 block">
           <span className="mb-2 block text-sm text-[var(--ink-secondary)]">
-            Ask in {language === "en-simple" ? "simple English" : "your own words"}
+            Ask in {language === 'en-simple' ? 'simple English' : 'your own words'}
           </span>
           <textarea
             value={question}

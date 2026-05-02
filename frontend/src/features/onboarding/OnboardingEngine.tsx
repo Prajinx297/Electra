@@ -1,20 +1,20 @@
-import { useMemo, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import type { ChangeEvent } from "react";
-import type { OnboardingProfile } from "../../types";
+import { motion, useReducedMotion } from 'framer-motion';
+import { useMemo, useState } from 'react';
+import type { ChangeEvent } from 'react';
+
+import type { OnboardingProfile } from '../../types';
 
 interface OnboardingEngineProps {
   onComplete: (profile: OnboardingProfile) => void;
 }
 
-const accessibilityOptions = ["Mobility", "Vision", "Language", "No specific needs"];
+const accessibilityOptions = ['Mobility', 'Vision', 'Language', 'No specific needs'];
 
 export const OnboardingEngine = ({ onComplete }: OnboardingEngineProps) => {
   const reducedMotion = useReducedMotion();
   const [step, setStep] = useState(0);
-  const [location, setLocation] = useState("");
-  const [familiarity, setFamiliarity] =
-    useState<OnboardingProfile["familiarity"]>("first-time");
+  const [location, setLocation] = useState('');
+  const [familiarity, setFamiliarity] = useState<OnboardingProfile['familiarity']>('first-time');
   const [accessibilityNeeds, setAccessibilityNeeds] = useState<string[]>([]);
 
   const progress = useMemo(() => Math.round(((step + 1) / 3) * 100), [step]);
@@ -27,7 +27,7 @@ export const OnboardingEngine = ({ onComplete }: OnboardingEngineProps) => {
     setAccessibilityNeeds((current) =>
       current.includes(need)
         ? current.filter((item) => item !== need)
-        : [...current.filter((item) => item !== "No specific needs"), need]
+        : [...current.filter((item) => item !== 'No specific needs'), need],
     );
   };
 
@@ -41,8 +41,8 @@ export const OnboardingEngine = ({ onComplete }: OnboardingEngineProps) => {
       location: location.trim(),
       familiarity,
       accessibilityNeeds,
-      toneMode: familiarity === "confident" ? "policy-expert" : "citizen",
-      completedAt: new Date().toISOString()
+      toneMode: familiarity === 'confident' ? 'policy-expert' : 'citizen',
+      completedAt: new Date().toISOString(),
     });
   };
 
@@ -62,8 +62,12 @@ export const OnboardingEngine = ({ onComplete }: OnboardingEngineProps) => {
         </div>
         <motion.div
           key={step}
-          initial={reducedMotion ? undefined : { opacity: 0, y: 8 }}
-          animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+          {...(reducedMotion
+            ? {}
+            : {
+                initial: { opacity: 0, y: 8 },
+                animate: { opacity: 1, y: 0 },
+              })}
           transition={{ duration: reducedMotion ? 0 : 0.3 }}
           className="mt-6"
         >
@@ -83,20 +87,22 @@ export const OnboardingEngine = ({ onComplete }: OnboardingEngineProps) => {
           ) : null}
           {step === 1 ? (
             <fieldset>
-              <legend className="text-2xl font-bold text-[var(--ink)]">How familiar is this?</legend>
+              <legend className="text-2xl font-bold text-[var(--ink)]">
+                How familiar is this?
+              </legend>
               <div className="mt-5 grid gap-3">
-                {(["first-time", "some-experience", "confident"] as const).map((option) => (
+                {(['first-time', 'some-experience', 'confident'] as const).map((option) => (
                   <button
                     key={option}
                     type="button"
                     onClick={() => setFamiliarity(option)}
                     className={`min-h-12 rounded-[18px] border px-4 text-left font-semibold ${
                       familiarity === option
-                        ? "border-[var(--civic-green)] bg-[var(--civic-green-light)]"
-                        : "border-[var(--border)] bg-[var(--surface-2)]"
+                        ? 'border-[var(--civic-green)] bg-[var(--civic-green-light)]'
+                        : 'border-[var(--border)] bg-[var(--surface-2)]'
                     }`}
                   >
-                    {option.replace("-", " ")}
+                    {option.replace('-', ' ')}
                   </button>
                 ))}
               </div>
@@ -114,8 +120,8 @@ export const OnboardingEngine = ({ onComplete }: OnboardingEngineProps) => {
                     aria-pressed={accessibilityNeeds.includes(need)}
                     className={`min-h-12 rounded-[18px] border px-4 text-left font-semibold ${
                       accessibilityNeeds.includes(need)
-                        ? "border-[var(--civic-green)] bg-[var(--civic-green-light)]"
-                        : "border-[var(--border)] bg-[var(--surface-2)]"
+                        ? 'border-[var(--civic-green)] bg-[var(--civic-green-light)]'
+                        : 'border-[var(--border)] bg-[var(--surface-2)]'
                     }`}
                   >
                     {need}
@@ -131,7 +137,7 @@ export const OnboardingEngine = ({ onComplete }: OnboardingEngineProps) => {
           onClick={handleNext}
           className="mt-6 min-h-12 w-full rounded-full bg-[var(--civic-green)] px-4 font-bold text-white disabled:opacity-50"
         >
-          {step === 2 ? "Enter Electra" : "Continue"}
+          {step === 2 ? 'Enter Electra' : 'Continue'}
         </button>
       </section>
     </main>

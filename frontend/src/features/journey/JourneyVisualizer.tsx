@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { motion } from "framer-motion";
-import type { Variants } from "framer-motion";
-import { JOURNEY_GRAPH, JOURNEY_STATES, useElectraStore } from "../../engines/stateEngine";
-import { useFeatureFlag } from "../../hooks/useFeatureFlag";
-import type { JourneyState } from "../../types";
+import { motion } from 'framer-motion';
+import type { Variants } from 'framer-motion';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+
+import { JOURNEY_GRAPH, JOURNEY_STATES, useElectraStore } from '../../engines/stateEngine';
+import { useFeatureFlag } from '../../hooks/useFeatureFlag';
+import type { JourneyState } from '../../types';
 
 interface JourneyVisualizerProps {
   onExplainStep: (stepName: string) => Promise<void>;
@@ -20,46 +21,46 @@ const nodeVariants: Variants = {
   visible: (index: number) => ({
     opacity: 1,
     scale: 1,
-    transition: { delay: index * 0.05, type: "spring", stiffness: 260, damping: 20 }
-  })
+    transition: { delay: index * 0.05, type: 'spring', stiffness: 260, damping: 20 },
+  }),
 };
 
 const pathVariants: Variants = {
   hidden: { pathLength: 0 },
-  visible: { pathLength: 1, transition: { duration: 0.8, ease: "easeInOut" } }
+  visible: { pathLength: 1, transition: { duration: 0.8, ease: 'easeInOut' } },
 };
 
 const categoryTime: Record<string, string> = {
-  welcome: "2 min",
-  registration: "5 min",
-  verification: "4 min",
-  voting: "6 min",
-  counting: "3 min",
-  support: "4 min",
-  completion: "1 min"
+  welcome: '2 min',
+  registration: '5 min',
+  verification: '4 min',
+  voting: '6 min',
+  counting: '3 min',
+  support: '4 min',
+  completion: '1 min',
 };
 
 const buildLevels = () => {
   const levels: Partial<Record<JourneyState, number>> = { WELCOME: 0 };
-  const queue: JourneyState[] = ["WELCOME"];
+  const queue: JourneyState[] = ['WELCOME'];
 
   while (queue.length) {
     const current = queue.shift()!;
     const currentLevel = levels[current] ?? 0;
-    JOURNEY_GRAPH[current].allowedTransitions.forEach((next) => {
+    for (const next of JOURNEY_GRAPH[current].allowedTransitions) {
       const nextLevel = currentLevel + 1;
-      if (levels[next] === undefined || nextLevel < levels[next]!) {
+      if (levels[next] === undefined || nextLevel < (levels[next] ?? Number.POSITIVE_INFINITY)) {
         levels[next] = nextLevel;
         queue.push(next);
       }
-    });
+    }
   }
 
-  JOURNEY_STATES.forEach((state) => {
+  for (const state of JOURNEY_STATES) {
     if (levels[state] === undefined) {
       levels[state] = 0;
     }
-  });
+  }
 
   return levels as Record<JourneyState, number>;
 };
@@ -72,22 +73,25 @@ const buildPositions = (): Record<JourneyState, NodePosition> => {
     return acc;
   }, {});
 
-  return JOURNEY_STATES.reduce<Record<JourneyState, NodePosition>>((acc, state) => {
-    const level = levels[state];
-    const siblings = grouped[level];
-    const index = siblings.indexOf(state);
-    const spread = 900 / Math.max(siblings.length, 1);
-    acc[state] = {
-      x: 70 + spread / 2 + index * spread,
-      y: 72 + level * 132,
-      level
-    };
-    return acc;
-  }, {} as Record<JourneyState, NodePosition>);
+  return JOURNEY_STATES.reduce<Record<JourneyState, NodePosition>>(
+    (acc, state) => {
+      const level = levels[state];
+      const siblings = grouped[level] ?? [];
+      const index = siblings.indexOf(state);
+      const spread = 900 / Math.max(siblings.length, 1);
+      acc[state] = {
+        x: 70 + spread / 2 + index * spread,
+        y: 72 + level * 132,
+        level,
+      };
+      return acc;
+    },
+    {} as Record<JourneyState, NodePosition>,
+  );
 };
 
 export const JourneyVisualizer = ({ onExplainStep }: JourneyVisualizerProps) => {
-  const enabled = useFeatureFlag("journey_visualizer_enabled");
+  const enabled = useFeatureFlag('journey_visualizer_enabled');
   const viewportRef = useRef<HTMLDivElement>(null);
   const positions = useMemo(buildPositions, []);
   const { currentState, history, currentResponse, rewindToState } = useElectraStore();
@@ -97,7 +101,7 @@ export const JourneyVisualizer = ({ onExplainStep }: JourneyVisualizerProps) => 
   const [replayIndex, setReplayIndex] = useState(0);
   const completedStates = useMemo(
     () => Array.from(new Set(history.map((entry) => entry.state))),
-    [history]
+    [history],
   );
   const completedSet = useMemo(() => new Set(completedStates), [completedStates]);
   const maxLevel = Math.max(...Object.values(positions).map((position) => position.level));
@@ -109,7 +113,7 @@ export const JourneyVisualizer = ({ onExplainStep }: JourneyVisualizerProps) => 
 
   useEffect(() => {
     if (!replaying) {
-      return undefined;
+      return;
     }
 
     setReplayIndex(0);
@@ -131,23 +135,23 @@ export const JourneyVisualizer = ({ onExplainStep }: JourneyVisualizerProps) => 
     return null;
   }
 
-  const predecessors = JOURNEY_STATES.filter((state) =>
-    JOURNEY_GRAPH[state].allowedTransitions.includes(focusedNode)
+  const predecessor = JOURNEY_STATES.find((state) =>
+    JOURNEY_GRAPH[state].allowedTransitions.includes(focusedNode),
   );
   const focusedPosition = positions[focusedNode];
   const replayState = completedStates[replayIndex] ?? completedStates[0] ?? currentState;
   const replayPosition = positions[replayState];
 
   const handleKeyboard = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
       event.preventDefault();
       setFocusedNode(JOURNEY_GRAPH[focusedNode].allowedTransitions[0] ?? focusedNode);
     }
-    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
       event.preventDefault();
-      setFocusedNode(predecessors[0] ?? focusedNode);
+      setFocusedNode(predecessor ?? focusedNode);
     }
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       rewindToState(focusedNode);
     }
@@ -220,16 +224,16 @@ export const JourneyVisualizer = ({ onExplainStep }: JourneyVisualizerProps) => 
                 key={`${state}-${next}`}
                 d={`M ${from.x} ${from.y + 34} C ${from.x} ${controlY}, ${to.x} ${controlY}, ${to.x} ${to.y - 34}`}
                 fill="none"
-                stroke={completed ? "#6ee7a8" : "#2d6cdf"}
+                stroke={completed ? '#6ee7a8' : '#2d6cdf'}
                 strokeWidth={completed ? 3 : 2}
-                className={completed ? "journey-edge-motion" : undefined}
+                className={completed ? 'journey-edge-motion' : undefined}
                 variants={pathVariants}
                 initial="hidden"
                 animate="visible"
                 opacity={completed ? 0.9 : 0.35}
               />
             );
-          })
+          }),
         )}
         {replaying && replayPosition ? (
           <motion.circle
@@ -270,29 +274,29 @@ export const JourneyVisualizer = ({ onExplainStep }: JourneyVisualizerProps) => 
               onClick={() => void onExplainStep(node.label)}
               className={`absolute w-[168px] rounded-lg border p-3 text-left shadow-xl transition ${
                 isCurrent
-                  ? "border-sky-300 bg-sky-500/35 ring-4 ring-sky-300/35"
+                  ? 'border-sky-300 bg-sky-500/35 ring-4 ring-sky-300/35'
                   : isCompleted
-                    ? "border-emerald-300 bg-emerald-500/25"
-                    : "border-white/10 bg-white/10"
-              } ${isCompleted ? "completed-node-pulse" : ""} ${isFuture ? "opacity-40" : "opacity-100"} ${isFocused ? "outline outline-2 outline-offset-2 outline-white" : ""}`}
+                    ? 'border-emerald-300 bg-emerald-500/25'
+                    : 'border-white/10 bg-white/10'
+              } ${isCompleted ? 'completed-node-pulse' : ''} ${isFuture ? 'opacity-40' : 'opacity-100'} ${isFocused ? 'outline outline-2 outline-offset-2 outline-white' : ''}`}
               style={{
                 left: position.x - 84,
                 top: position.y - 40,
-                textDecoration: isSkipped ? "line-through" : "none"
+                textDecoration: isSkipped ? 'line-through' : 'none',
               }}
-              aria-current={isCurrent ? "step" : undefined}
+              aria-current={isCurrent ? 'step' : undefined}
             >
               <span className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-200">
                 {categoryTime[node.category]}
               </span>
               <span className="mt-1 block text-sm font-bold">{node.label}</span>
               <span className="mt-2 block text-xs text-slate-200">
-                {isCompleted ? "✓ Completed" : isCurrent ? "Current" : "Future"}
+                {isCompleted ? '✓ Completed' : isCurrent ? 'Current' : 'Future'}
               </span>
               {hovered === state ? (
                 <span className="absolute left-0 top-[calc(100%+8px)] z-30 w-64 rounded-lg border border-white/10 bg-[#0d1d33] p-3 text-xs leading-5 text-slate-100 shadow-2xl">
                   {node.consequenceData.bestPath}
-                  {isCurrent ? ` ${currentResponse.message}` : ""}
+                  {isCurrent ? ` ${currentResponse.message}` : ''}
                 </span>
               ) : null}
             </motion.button>
@@ -310,7 +314,13 @@ export const JourneyVisualizer = ({ onExplainStep }: JourneyVisualizerProps) => 
                 cx={position.x}
                 cy={(position.y / viewHeight) * 1000}
                 r={state === currentState ? 18 : 8}
-                fill={state === currentState ? "#7dd3fc" : completedSet.has(state) ? "#6ee7a8" : "#64748b"}
+                fill={
+                  state === currentState
+                    ? '#7dd3fc'
+                    : completedSet.has(state)
+                      ? '#6ee7a8'
+                      : '#64748b'
+                }
               />
             );
           })}

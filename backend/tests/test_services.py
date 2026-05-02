@@ -60,7 +60,7 @@ async def test_gemini_service_parses_json_response(monkeypatch):
             assert "Respond entirely in Spanish" in prompt
             return SimpleNamespace(text=json.dumps(payload))
 
-    service = geminiOracleService()
+    service = GeminiOracleService()
     service.model = MockModel()
 
     response = await service.generate(
@@ -97,7 +97,7 @@ async def test_gemini_service_parses_plain_markdown_fence(monkeypatch):
             assert "Respond entirely in French" in prompt
             return SimpleNamespace(text=json.dumps(payload))
 
-    service = geminiOracleService()
+    service = GeminiOracleService()
     service.model = MockModel()
 
     response = await service.generate(

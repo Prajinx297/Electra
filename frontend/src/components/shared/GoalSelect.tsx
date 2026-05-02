@@ -1,11 +1,11 @@
-import { useElectraStore } from "../../engines/stateEngine";
+import { useElectraStore } from '../../engines/stateEngine';
 
 const goals = [
-  "I have never voted before",
-  "My registration may have a problem",
-  "My ID was not accepted",
-  "I want to understand counting",
-  "I need accessibility help"
+  'I have never voted before',
+  'My registration may have a problem',
+  'My ID was not accepted',
+  'I want to understand counting',
+  'I need accessibility help',
 ];
 
 const GoalSelect = () => {
@@ -27,8 +27,8 @@ const GoalSelect = () => {
               onClick={() => setDraftSelection(goal)}
               className={`min-h-12 w-full rounded-[18px] border px-4 py-4 text-left ${
                 selected
-                  ? "border-[var(--civic-green)] bg-[var(--civic-green-light)]"
-                  : "border-[var(--border)] bg-[var(--surface-2)]"
+                  ? 'border-[var(--civic-green)] bg-[var(--civic-green-light)]'
+                  : 'border-[var(--border)] bg-[var(--surface-2)]'
               }`}
               aria-pressed={selected}
             >

@@ -11,7 +11,7 @@ export const ProgressDots = ({ step, total }: ProgressDotsProps) => (
         <span
           key={index}
           className={`h-3 w-3 rounded-full ${
-            active ? "bg-[var(--civic-green)]" : "bg-[var(--border)]"
+            active ? 'bg-[var(--civic-green)]' : 'bg-[var(--border)]'
           }`}
         />
       );

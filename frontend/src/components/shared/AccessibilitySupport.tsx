@@ -1,16 +1,16 @@
 const supportCards = [
   {
-    title: "Mobility help",
-    body: "See wheelchair-friendly places and curbside voting."
+    title: 'Mobility help',
+    body: 'See wheelchair-friendly places and curbside voting.',
   },
   {
-    title: "Low-vision help",
-    body: "Look for large print and audio ballot support."
+    title: 'Low-vision help',
+    body: 'Look for large print and audio ballot support.',
   },
   {
-    title: "Language help",
-    body: "Find translation services and simpler wording."
-  }
+    title: 'Language help',
+    body: 'Find translation services and simpler wording.',
+  },
 ];
 
 const AccessibilitySupport = () => (

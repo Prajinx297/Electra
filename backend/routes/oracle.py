@@ -1,32 +1,34 @@
 import json
-from fastapi import APIRouter, Request, HTTPException, Depends
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from collections.abc import AsyncIterator
 
-from services.gemini_service import oracle_service
-from dependencies import get_current_user
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
+
+from backend.services.gemini_service import oracle_service
+from backend.services.rate_limit import limiter
 
 router = APIRouter()
 
-from pydantic import BaseModel, Field, constr
-
 class OracleRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1024, strict=True)
-    currentState: constr(pattern="^[a-zA-Z0-9_-]+$") = Field(strict=True)
-    stateHistory: List[Dict[str, Any]] = Field(default_factory=list, max_length=10)
-    cognitiveLevel: constr(pattern="^(normal|simplified|expert)$") = Field(default="normal", strict=True)
-    language: constr(min_length=2, max_length=5) = Field(default="en", strict=True)
-    persona: Optional[str] = Field(default=None, max_length=50)
-    sessionId: Optional[str] = Field(default=None, max_length=100)
-    profile: Optional[Dict[str, Any]] = Field(default=None)
+    currentState: str = Field(pattern="^[a-zA-Z0-9_-]+$", strict=True)
+    stateHistory: list[dict[str, object]] = Field(default_factory=list, max_length=10)
+    cognitiveLevel: str = Field(default="normal", pattern="^(normal|simplified|expert|citizen)$", strict=True)
+    language: str = Field(default="en", min_length=2, max_length=5, strict=True)
+    persona: str | None = Field(default=None, max_length=50)
+    sessionId: str | None = Field(default=None, max_length=100)
+    profile: dict[str, object] | None = Field(default=None)
 
 @router.post("/oracle")
-async def ask_oracle(request: Request, body: OracleRequest, user: dict = Depends(get_current_user)):
+async def ask_oracle(request: Request, body: OracleRequest) -> dict[str, object]:
     """
     Agentic UI core endpoint. Takes user input and state, returns JSON for UI rendering.
     Rate limited to 10 requests per minute per user IP.
     """
+    if not limiter.hit(request):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
+
     try:
         response_data = await oracle_service.generate(
             user_message=body.message,
@@ -41,8 +43,11 @@ async def ask_oracle(request: Request, body: OracleRequest, user: dict = Depends
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/oracle/stream")
-async def stream_oracle(request: Request, body: OracleRequest, user: dict = Depends(get_current_user)):
+async def stream_oracle(request: Request, body: OracleRequest) -> StreamingResponse:
     """Stream the Oracle response as JSON text for token-by-token UI rendering."""
+    if not limiter.hit(request):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded")
+
     try:
         response_data = await oracle_service.generate(
             user_message=body.message,
@@ -53,7 +58,7 @@ async def stream_oracle(request: Request, body: OracleRequest, user: dict = Depe
             persona=body.persona
         )
 
-        async def token_stream():
+        async def token_stream() -> AsyncIterator[str]:
             message = str(response_data.get("message", ""))
             for index in range(0, len(message), 6):
                 yield json.dumps({"delta": message[index:index + 6]}) + "\n"

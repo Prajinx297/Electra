@@ -1,27 +1,28 @@
-import ReactFlow, { Background, type Edge, type Node } from "reactflow";
-import "reactflow/dist/style.css";
-import { useElectraStore } from "../../engines/stateEngine";
+import ReactFlow, { Background, type Edge, type Node } from 'reactflow';
+
+import 'reactflow/dist/style.css';
+import { useElectraStore } from '../../engines/stateEngine';
 
 const JourneyGraph = () => {
   const { history } = useElectraStore();
   const recent = history.slice(-4);
   const nodes: Node[] = recent.map((entry, index) => ({
     id: `${entry.state}-${index}`,
-    data: { label: entry.state.replace(/_/g, " ") },
+    data: { label: entry.state.replace(/_/g, ' ') },
     position: { x: index * 180, y: 40 },
     style: {
       borderRadius: 18,
-      border: "1px solid #E8E6E1",
+      border: '1px solid #E8E6E1',
       padding: 10,
-      background: index === recent.length - 1 ? "#E8F5EE" : "#FFFFFF",
-      color: "#1A1A2E",
-      width: 150
-    }
+      background: index === recent.length - 1 ? '#E8F5EE' : '#FFFFFF',
+      color: '#1A1A2E',
+      width: 150,
+    },
   }));
   const edges: Edge[] = recent.slice(1).map((entry, index) => ({
-    id: `${recent[index].state}-${entry.state}`,
-    source: `${recent[index].state}-${index}`,
-    target: `${entry.state}-${index + 1}`
+    id: `${recent[index]?.state ?? 'start'}-${entry.state}`,
+    source: `${recent[index]?.state ?? entry.state}-${index}`,
+    target: `${entry.state}-${index + 1}`,
   }));
 
   return (

@@ -1,4 +1,6 @@
 import json
+import math
+
 from locust import HttpUser, task, between, LoadTestShape
 
 class ElectraUser(HttpUser):

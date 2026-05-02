@@ -1,6 +1,6 @@
-import { LanguageSelector } from "../shared/LanguageSelector";
-import { getCopy } from "../../i18n";
-import type { LanguageCode } from "../../types";
+import { getCopy } from '../../i18n';
+import type { LanguageCode } from '../../types';
+import { LanguageSelector } from '../shared/LanguageSelector';
 
 interface HeaderProps {
   language: LanguageCode;
@@ -26,15 +26,15 @@ export const Header = ({
   scoreEnabled = false,
   score = 0,
   onLanguageChange,
-  onVisualizerToggle = () => undefined,
-  onSimulatorOpen = () => undefined,
-  onScoreOpen = () => undefined,
-  onSignIn
+  onVisualizerToggle = () => {},
+  onSimulatorOpen = () => {},
+  onScoreOpen = () => {},
+  onSignIn,
 }: HeaderProps) => (
   <header className="flex flex-wrap items-center justify-between gap-4 rounded-[28px] bg-[var(--surface)] px-5 py-4 shadow-[0_8px_24px_var(--shadow)]">
     <div>
       <p className="text-sm font-bold tracking-[0.08em] text-[var(--civic-green)]">
-        {getCopy(language, "appTitle")}
+        {getCopy(language, 'appTitle')}
       </p>
       <p className="text-sm text-[var(--ink-secondary)]">{userLabel}</p>
     </div>

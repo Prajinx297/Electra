@@ -1,4 +1,4 @@
-import { JOURNEY_GRAPH, useElectraStore } from "../../engines/stateEngine";
+import { JOURNEY_GRAPH, useElectraStore } from '../../engines/stateEngine';
 
 export const JourneySidebar = () => {
   const { history, currentState, rewindToState, bookmarkState, bookmarkedStates } =
@@ -18,8 +18,8 @@ export const JourneySidebar = () => {
                 key={state}
                 className={`flex items-center gap-3 rounded-[18px] px-4 py-3 ${
                   isCurrent
-                    ? "bg-[var(--civic-green-light)] text-[var(--ink)]"
-                    : "bg-[var(--surface-2)] text-[var(--ink)]"
+                    ? 'bg-[var(--civic-green-light)] text-[var(--ink)]'
+                    : 'bg-[var(--surface-2)] text-[var(--ink)]'
                 }`}
               >
                 <button
@@ -35,7 +35,7 @@ export const JourneySidebar = () => {
                   className="min-h-12 text-xs"
                   aria-pressed={isBookmarked}
                 >
-                  {isBookmarked ? "Saved" : "Save"}
+                  {isBookmarked ? 'Saved' : 'Save'}
                 </button>
               </div>
             );

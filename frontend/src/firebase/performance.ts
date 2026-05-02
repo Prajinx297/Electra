@@ -1,5 +1,6 @@
-import { getPerformance, trace } from "firebase/performance";
-import { app } from "./config";
+import { getPerformance, trace } from 'firebase/performance';
+
+import { app } from './config';
 
 interface TraceLike {
   start: () => void;
@@ -8,9 +9,9 @@ interface TraceLike {
 }
 
 const noopTrace: TraceLike = {
-  start: () => undefined,
-  stop: () => undefined,
-  putMetric: () => undefined
+  start: () => {},
+  stop: () => {},
+  putMetric: () => {},
 };
 
 const createTrace = (name: string): TraceLike => {
@@ -21,18 +22,16 @@ const createTrace = (name: string): TraceLike => {
   }
 };
 
-export async function measureOracleLatency<T>(
-  requestFn: () => Promise<T>
-): Promise<T> {
-  const requestTrace = createTrace("oracle_response_latency");
+export async function measureOracleLatency<T>(requestFn: () => Promise<T>): Promise<T> {
+  const requestTrace = createTrace('oracle_response_latency');
   requestTrace.start();
 
   try {
     const result = await requestFn();
-    requestTrace.putMetric("success", 1);
+    requestTrace.putMetric('success', 1);
     return result;
   } catch (error) {
-    requestTrace.putMetric("error", 1);
+    requestTrace.putMetric('error', 1);
     throw error;
   } finally {
     requestTrace.stop();
@@ -40,7 +39,7 @@ export async function measureOracleLatency<T>(
 }
 
 export function measureStreamingLatency() {
-  return createTrace("oracle_streaming_ttft");
+  return createTrace('oracle_streaming_ttft');
 }
 
 export function measureJourneyStepTime(stepId: string) {

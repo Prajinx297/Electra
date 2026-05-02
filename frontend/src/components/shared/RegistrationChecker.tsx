@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { validateAddress, validateName } from "../../utils/validators";
+import { useState } from 'react';
+
+import { validateAddress, validateName } from '../../utils/validators';
 
 const RegistrationChecker = () => {
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [message, setMessage] = useState("We only need your name and home address to check.");
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [message, setMessage] = useState('We only need your name and home address to check.');
 
   return (
     <section className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_8px_24px_var(--shadow)]">
@@ -34,8 +35,8 @@ const RegistrationChecker = () => {
             const addressResult = validateAddress(address);
             setMessage(
               nameResult.valid && addressResult.valid
-                ? "Those details look ready to check."
-                : "Please fill both boxes with full details."
+                ? 'Those details look ready to check.'
+                : 'Please fill both boxes with full details.',
             );
           }}
           className="min-h-12 rounded-full bg-[var(--surface-2)] px-4 text-sm font-semibold text-[var(--ink)]"

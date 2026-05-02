@@ -1,5 +1,11 @@
-import { fetchAndActivate, getRemoteConfig, getValue, type RemoteConfig } from "firebase/remote-config";
-import { app } from "./config";
+import {
+  fetchAndActivate,
+  getRemoteConfig,
+  getValue,
+  type RemoteConfig,
+} from 'firebase/remote-config';
+
+import { app } from './config';
 
 const defaults: Record<string, boolean | number | string> = {
   election_simulator_enabled: true,
@@ -7,7 +13,7 @@ const defaults: Record<string, boolean | number | string> = {
   streaming_oracle_enabled: true,
   journey_visualizer_enabled: true,
   simulator_anomaly_injection: false,
-  max_oracle_questions_per_session: 20
+  max_oracle_questions_per_session: 20,
 };
 
 let remoteConfig: RemoteConfig | null = null;
@@ -49,7 +55,7 @@ export function getFeatureFlag(key: string): boolean {
 export function getConfigValue(key: string): string {
   const fallback = defaults[key];
   const config = getConfig();
-  return config ? getValue(config, key).asString() : String(fallback ?? "");
+  return config ? getValue(config, key).asString() : String(fallback ?? '');
 }
 
 export function getConfigNumber(key: string): number {

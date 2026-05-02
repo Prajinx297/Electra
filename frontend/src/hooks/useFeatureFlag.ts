@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { getFeatureFlag, initRemoteConfig } from "../firebase/remoteConfig";
+import { useEffect, useState } from 'react';
+
+import { getFeatureFlag, initRemoteConfig } from '../firebase/remoteConfig';
 
 export function useFeatureFlag(key: string): boolean {
   const [value, setValue] = useState(() => getFeatureFlag(key));

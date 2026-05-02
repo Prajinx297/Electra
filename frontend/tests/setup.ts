@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
+import { toHaveNoViolations } from "jest-axe";
 import * as React from "react";
 import { expect, vi } from "vitest";
-import { toHaveNoViolations } from "jest-axe";
 
 expect.extend(toHaveNoViolations);
 
@@ -43,7 +43,7 @@ vi.mock("firebase/auth", () => ({
   getAuth: vi.fn(() => ({ currentUser: null })),
   onAuthStateChanged: vi.fn((_auth, callback: (user: { uid: string; isAnonymous: boolean; displayName: string | null }) => void) => {
     callback({ uid: "test-user", isAnonymous: true, displayName: null });
-    return () => undefined;
+    return () => {};
   }),
   signInAnonymously: vi.fn().mockResolvedValue({
     user: {
@@ -83,10 +83,10 @@ Object.defineProperty(window, "matchMedia", {
     matches: query.includes("prefers-reduced-motion"),
     media: query,
     onchange: null,
-    addListener: () => undefined,
-    removeListener: () => undefined,
-    addEventListener: () => undefined,
-    removeEventListener: () => undefined,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
     dispatchEvent: () => false
   })
 });

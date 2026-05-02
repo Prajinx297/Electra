@@ -5,9 +5,9 @@ interface DecisionCardProps {
 }
 
 const DecisionCard = ({
-  title = "You are in the right place.",
-  description = "We will handle one small step now.",
-  bullets = []
+  title = 'You are in the right place.',
+  description = 'We will handle one small step now.',
+  bullets = [],
 }: DecisionCardProps) => (
   <section className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_8px_24px_var(--shadow)]">
     <h2 className="text-[1.7rem] font-bold text-[var(--ink)]">{title}</h2>

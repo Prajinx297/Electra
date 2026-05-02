@@ -1,14 +1,8 @@
-import { useMemo, useState } from "react";
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from "recharts";
-import { buildVoteCountFrames, calculateRecountTrigger } from "../../engines/simulationEngine";
-import { trackSimulationInteracted } from "../../engines/confusionTracker";
+import { useMemo, useState } from 'react';
+import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
+import { trackSimulationInteracted } from '../../engines/confusionTracker';
+import { buildVoteCountFrames, calculateRecountTrigger } from '../../engines/simulationEngine';
 
 const VoteCounter = () => {
   const [regionSize, setRegionSize] = useState(12000);
@@ -22,9 +16,9 @@ const VoteCounter = () => {
         regionSize,
         candidateCount,
         precinctCount,
-        recountThresholdPercent: threshold
+        recountThresholdPercent: threshold,
       }),
-    [candidateCount, precinctCount, regionSize, threshold]
+    [candidateCount, precinctCount, regionSize, threshold],
   );
   const latest = frames.at(-1) ?? { totals: [] };
   const recount = calculateRecountTrigger(latest.totals, threshold);
@@ -37,10 +31,10 @@ const VoteCounter = () => {
       </p>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         {[
-          ["Region size", regionSize, setRegionSize, 4000, 50000, 1000],
-          ["Candidates", candidateCount, setCandidateCount, 2, 4, 1],
-          ["Precincts", precinctCount, setPrecinctCount, 3, 12, 1],
-          ["Recount %", threshold, setThreshold, 0.25, 2, 0.25]
+          ['Region size', regionSize, setRegionSize, 4000, 50000, 1000],
+          ['Candidates', candidateCount, setCandidateCount, 2, 4, 1],
+          ['Precincts', precinctCount, setPrecinctCount, 3, 12, 1],
+          ['Recount %', threshold, setThreshold, 0.25, 2, 0.25],
         ].map(([label, value, setter, min, max, step]) => (
           <label key={label as string} className="block">
             <span className="mb-2 block text-sm font-semibold text-[var(--ink)]">
@@ -53,7 +47,7 @@ const VoteCounter = () => {
               step={step as number}
               value={value as number}
               onChange={(event) => {
-                void trackSimulationInteracted("vote-counter", String(event.target.value));
+                void trackSimulationInteracted('vote-counter', String(event.target.value));
                 (setter as (value: number) => void)(Number(event.target.value));
               }}
               className="w-full accent-[var(--civic-green)]"
@@ -67,7 +61,7 @@ const VoteCounter = () => {
             data={frames.map((frame) => ({
               precinct: frame.precinct,
               lead: frame.totals[0] ?? 0,
-              second: frame.totals[1] ?? 0
+              second: frame.totals[1] ?? 0,
             }))}
           >
             <XAxis dataKey="precinct" />

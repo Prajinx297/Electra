@@ -8,7 +8,7 @@ router = APIRouter()
 # or fetching official candidate data if it were integrated in v2).
 
 @router.get("/simulations/recount-thresholds")
-async def get_recount_thresholds():
+async def get_recount_thresholds() -> dict[str, float]:
     """Return static mock data for recount thresholds by state."""
     return {
         "GA": 0.5,
@@ -18,7 +18,7 @@ async def get_recount_thresholds():
     }
 
 @router.get("/simulations/deadlines")
-async def get_deadlines(state: str):
+async def get_deadlines(state: str) -> dict[str, int | str]:
     """Return mock deadlines for a specific state."""
     return {
         "state": state,
