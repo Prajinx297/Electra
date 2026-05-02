@@ -13,7 +13,7 @@ RUN npm run build
 
 # Stage 2: Build the FastAPI backend
 FROM python:3.12-slim
-WORKDIR /app/backend
+WORKDIR /app
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -29,11 +29,11 @@ COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend source
-COPY backend .
+COPY backend ./backend
 
 # Copy frontend build from stage 1 to a public folder accessible by the backend
-COPY --from=frontend-builder /app/frontend/dist /app/backend/public
+COPY --from=frontend-builder /app/frontend/dist ./backend/public
 
-# Expose port and run the FastAPI app from within backend/
+# Expose port and run the FastAPI app from root
 EXPOSE 8080
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT}"]
