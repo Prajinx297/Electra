@@ -1,18 +1,35 @@
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 
 import { JOURNEY_GRAPH, JOURNEY_STATES, useElectraStore } from '../../engines/stateEngine';
 import { useFeatureFlag } from '../../hooks/useFeatureFlag';
 import type { JourneyState } from '../../types';
 
-interface JourneyVisualizerProps {
+/**
+ * Props for {@link JourneyVisualizer}.
+ */
+export interface JourneyVisualizerProps {
+  /** Dispatches contextual Oracle prompts when learners request plain-language clarifications. */
   onExplainStep: (stepName: string) => Promise<void>;
 }
 
+/**
+ * Normalized coordinates describing journey nodes inside the SVG visualization canvas.
+ */
 interface NodePosition {
+  /** Horizontal anchor inside the responsive SVG viewport. */
   x: number;
+  /** Vertical anchor correlated with civic journey depth tiers. */
   y: number;
+  /** Topological tier inferred via breadth-first traversal of {@link JOURNEY_GRAPH}. */
   level: number;
 }
 
@@ -90,7 +107,13 @@ const buildPositions = (): Record<JourneyState, NodePosition> => {
   );
 };
 
-export const JourneyVisualizer = ({ onExplainStep }: JourneyVisualizerProps) => {
+/**
+ * Interactive SVG journey cartogram exposing civic checkpoints, replay tooling, and rewind hooks.
+ *
+ * @param props - Async Oracle bridge invoked when learners ask for narrated checkpoint summaries.
+ * @returns Journey visualization surface or null when feature flags disable the module.
+ */
+export function JourneyVisualizer({ onExplainStep }: JourneyVisualizerProps): ReactNode {
   const enabled = useFeatureFlag('journey_visualizer_enabled');
   const viewportRef = useRef<HTMLDivElement>(null);
   const positions = useMemo(buildPositions, []);
@@ -337,4 +360,4 @@ export const JourneyVisualizer = ({ onExplainStep }: JourneyVisualizerProps) => 
       </div>
     </section>
   );
-};
+}

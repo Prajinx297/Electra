@@ -1,29 +1,45 @@
 import { motion, useReducedMotion } from 'framer-motion';
-import { useMemo, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import { useMemo, useState, type ChangeEvent, type ReactNode } from 'react';
 
 import type { OnboardingProfile } from '../../types';
 
-interface OnboardingEngineProps {
+/**
+ * Props for {@link OnboardingEngine}.
+ */
+export interface OnboardingEngineProps {
+  /** Persists structured onboarding output into Electra global civic journey stores. */
   onComplete: (profile: OnboardingProfile) => void;
 }
 
-const accessibilityOptions = ['Mobility', 'Vision', 'Language', 'No specific needs'];
+/** Accessibility persona chips selectable during onboarding introspection. */
+const accessibilityOptions = ['Mobility', 'Vision', 'Language', 'No specific needs'] as const;
 
-export const OnboardingEngine = ({ onComplete }: OnboardingEngineProps) => {
+/** Total onboarding wizard steps powering deterministic progress calculations. */
+const ONBOARDING_TOTAL_STEPS = 3;
+
+/**
+ * Three-step civic onboarding capturing locality, familiarity, and accessibility posture.
+ *
+ * @param props - Completion handler bridging onboarding output into orchestrators.
+ * @returns Full-screen onboarding wizard with motion-aware transitions.
+ */
+export function OnboardingEngine({ onComplete }: OnboardingEngineProps): ReactNode {
   const reducedMotion = useReducedMotion();
   const [step, setStep] = useState(0);
   const [location, setLocation] = useState('');
   const [familiarity, setFamiliarity] = useState<OnboardingProfile['familiarity']>('first-time');
   const [accessibilityNeeds, setAccessibilityNeeds] = useState<string[]>([]);
 
-  const progress = useMemo(() => Math.round(((step + 1) / 3) * 100), [step]);
+  const progress = useMemo(
+    (): number => Math.round(((step + 1) / ONBOARDING_TOTAL_STEPS) * 100),
+    [step],
+  );
 
-  const handleLocationChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleLocationChange = (event: ChangeEvent<HTMLInputElement>): void => {
     setLocation(event.target.value);
   };
 
-  const handleNeedToggle = (need: string) => {
+  const handleNeedToggle = (need: string): void => {
     setAccessibilityNeeds((current) =>
       current.includes(need)
         ? current.filter((item) => item !== need)
@@ -31,9 +47,9 @@ export const OnboardingEngine = ({ onComplete }: OnboardingEngineProps) => {
     );
   };
 
-  const handleNext = () => {
-    if (step < 2) {
-      setStep((current) => current + 1);
+  const handleNext = (): void => {
+    if (step < ONBOARDING_TOTAL_STEPS - 1) {
+      setStep((current: number): number => current + 1);
       return;
     }
 
@@ -142,4 +158,4 @@ export const OnboardingEngine = ({ onComplete }: OnboardingEngineProps) => {
       </section>
     </main>
   );
-};
+}

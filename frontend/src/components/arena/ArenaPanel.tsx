@@ -1,33 +1,39 @@
-import { Suspense, useEffect, useMemo } from 'react';
+import { useEffect, type ReactNode } from 'react';
+
+import { logger } from '@/lib/logger';
 
 import { useElectraStore } from '../../engines/stateEngine';
-import { RenderKey, type RenderKey as RenderKeyType } from '../../types';
+import type { RenderKey } from '../../types';
 
-import { getComponent, preloadComponent } from './ComponentRegistry';
+import { ComponentRegistry, preloadComponent } from './ComponentRegistry';
 
-interface ArenaPanelProps {
-  render: RenderKeyType | null;
+/**
+ * Props for {@link ArenaPanel}.
+ */
+export interface ArenaPanelProps {
+  /** Oracle render directive identifying which civic module to mount in the arena. */
+  render: RenderKey | null;
+  /** Serialized props object forwarded into the mounted civic component. */
   renderProps: Record<string, unknown>;
 }
 
-export const ArenaPanel = ({ render, renderProps }: ArenaPanelProps): JSX.Element => {
+/**
+ * Civic arena workspace that mounts Oracle-directed modules and prefetches predictions.
+ *
+ * Subscribes to {@link useElectraStore}'s `predictedRender` hint so high-confidence next steps
+ * can warm chunk caches before the user navigates, shrinking perceived latency.
+ *
+ * @param props - Active Oracle render target plus forwarded props payload.
+ * @returns Composed lazy civic renderer wrapped by error boundaries inside {@link ComponentRegistry}.
+ */
+export function ArenaPanel({ render, renderProps }: ArenaPanelProps): ReactNode {
   const { predictedRender } = useElectraStore();
 
-  useEffect(() => {
-    void preloadComponent(predictedRender);
+  useEffect((): void => {
+    void preloadComponent(predictedRender).catch((err: unknown): void => {
+      logger.error('Predictive civic module prefetch failed', err);
+    });
   }, [predictedRender]);
 
-  const Component = useMemo(() => getComponent(render ?? RenderKey.DecisionCard), [render]);
-
-  return (
-    <Suspense
-      fallback={
-        <div className="rounded-[24px] bg-[var(--surface)] p-6 shadow-[0_8px_24px_var(--shadow)]">
-          Loading your next step...
-        </div>
-      }
-    >
-      <Component {...renderProps} />
-    </Suspense>
-  );
-};
+  return <ComponentRegistry componentProps={renderProps} renderKey={render} />;
+}

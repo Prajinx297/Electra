@@ -1,45 +1,103 @@
 import type { OracleRequest, OracleResponse, OracleStreamChunk, TrustMetadata } from '../types';
 
-const ORACLE_TIMEOUT_MS = 12000;
-const RETRY_DELAYS_MS = [250, 750];
+/** Milliseconds before duplicated AbortControllers cancel hanging Oracle HTTP calls. */
+const ORACLE_HTTP_TIMEOUT_MS = 12000;
 
+/** Exponential backoff offsets applied between retried synchronous Oracle posts. */
+const ORACLE_RETRY_BACKOFF_SCHEDULE_MS = [250, 750] as const;
+
+/** Relative FastAPI path resolving synchronous Oracle completions used by the civic shell. */
+const ORACLE_SYNC_API_PATH = '/api/oracle';
+
+/** Relative FastAPI path exposing newline-delimited Oracle streaming payloads. */
+const ORACLE_STREAM_API_PATH = '/api/oracle/stream';
+
+/** Confidence injected into synthesized streaming responses lacking explicit Oracle metadata. */
+const ORACLE_STREAM_FALLBACK_CONFIDENCE = 0.9;
+
+/** Structured FastAPI payload bridging frontend Oracle requests with backend validators. */
 interface ApiOracleRequest {
-  message: string;
-  currentState: string;
-  stateHistory: OracleRequest['history'];
   cognitiveLevel: string;
+  currentState: string;
   language: string;
-  sessionId?: string | undefined;
+  message: string;
   profile?: OracleRequest['profile'] | undefined;
+  sessionId?: string | undefined;
+  stateHistory: OracleRequest['history'];
 }
 
-const wait = (delayMs: number) =>
-  new Promise((resolve) => {
+/** Utilities returned alongside synthetic abort signals for cooperative HTTP cancellation. */
+interface OracleTimeoutHandle {
+  /** AbortSignal wired into fetch contracts so timeouts mirror user cancellations. */
+  signal: AbortSignal;
+  /** Clears pending timers once Oracle completions settle successfully. */
+  clear: () => void;
+}
+
+/**
+ * Suspends execution for deterministic backoff intervals between Oracle retries.
+ *
+ * @param delayMs - Milliseconds to defer continuation scheduling on the macrotask queue.
+ * @returns Promise resolving once the delay elapses.
+ */
+const wait = (delayMs: number): Promise<void> =>
+  new Promise((resolve: () => void) => {
     window.setTimeout(resolve, delayMs);
   });
 
-const withTimeout = (signal?: AbortSignal) => {
+/**
+ * Composes an AbortSignal that fires after {@link ORACLE_HTTP_TIMEOUT_MS} unless cleared early.
+ *
+ * @param signal - Optional upstream abort scope propagated from orchestrators or UI cancels.
+ * @returns Cooperative timeout controller exposing merged abort semantics for fetch calls.
+ */
+const createOracleTimeoutHandle = (signal?: AbortSignal): OracleTimeoutHandle => {
   const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), ORACLE_TIMEOUT_MS);
+  const timer = window.setTimeout((): void => {
+    controller.abort();
+  }, ORACLE_HTTP_TIMEOUT_MS);
 
-  signal?.addEventListener('abort', () => controller.abort(), { once: true });
+  signal?.addEventListener(
+    'abort',
+    (): void => {
+      controller.abort();
+    },
+    { once: true },
+  );
 
   return {
+    clear: (): void => {
+      window.clearTimeout(timer);
+    },
     signal: controller.signal,
-    clear: () => window.clearTimeout(timer),
   };
 };
 
-const toApiPayload = (payload: OracleRequest): ApiOracleRequest => ({
-  message: payload.userMessage,
-  currentState: payload.currentState,
-  stateHistory: payload.history,
+/**
+ * Maps strongly typed {@link OracleRequest} envelopes onto backend-compatible JSON payloads.
+ *
+ * @param payload - Civic orchestration payload describing learner dialogue context.
+ * @returns Wire-format Oracle body understood by FastAPI validators.
+ */
+const toApiOraclePayload = (payload: OracleRequest): ApiOracleRequest => ({
   cognitiveLevel: payload.cognitiveLevel,
+  currentState: payload.currentState,
   language: payload.language,
-  sessionId: payload.sessionId,
+  message: payload.userMessage,
   profile: payload.profile,
+  sessionId: payload.sessionId,
+  stateHistory: payload.history,
 });
 
+/**
+ * Performs resilient synchronous Oracle posts with bounded exponential backoff retries.
+ *
+ * @param payload - Fully hydrated civic Oracle envelope forwarded from orchestrators.
+ * @param token - Optional Firebase bearer token enabling authenticated civic telemetry lanes.
+ * @param signal - Optional upstream abort scope cancelling retried attempts cooperatively.
+ * @returns Parsed Oracle JSON directing Agentic UI render targets.
+ * @throws Error When every retry attempt exhausts without receiving structured Oracle JSON.
+ */
 export const requestOracle = async (
   payload: OracleRequest,
   token?: string | null,
@@ -47,29 +105,29 @@ export const requestOracle = async (
 ): Promise<OracleResponse> => {
   let lastError: Error | null = null;
 
-  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
-    const timeout = withTimeout(signal);
+  for (let attempt = 0; attempt <= ORACLE_RETRY_BACKOFF_SCHEDULE_MS.length; attempt += 1) {
+    const timeout = createOracleTimeoutHandle(signal);
 
     try {
-      const response = await fetch('/api/oracle', {
-        method: 'POST',
+      const response = await fetch(ORACLE_SYNC_API_PATH, {
+        body: JSON.stringify(toApiOraclePayload(payload)),
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(toApiPayload(payload)),
+        method: 'POST',
         signal: timeout.signal,
       });
 
       if (!response.ok) {
-        throw new Error(`Oracle request failed with ${response.status}`);
+        throw new Error(`Oracle request failed with ${String(response.status)}`);
       }
 
       return (await response.json()) as OracleResponse;
-    } catch (error) {
+    } catch (error: unknown) {
       lastError = error instanceof Error ? error : new Error('Oracle request failed');
-      if (attempt < RETRY_DELAYS_MS.length) {
-        await wait(RETRY_DELAYS_MS[attempt] ?? 0);
+      if (attempt < ORACLE_RETRY_BACKOFF_SCHEDULE_MS.length) {
+        await wait(ORACLE_RETRY_BACKOFF_SCHEDULE_MS[attempt] ?? 0);
       }
     } finally {
       timeout.clear();
@@ -79,7 +137,13 @@ export const requestOracle = async (
   throw lastError ?? new Error('Oracle request failed');
 };
 
-const parseStructuredChunk = (line: string): OracleStreamChunk | null => {
+/**
+ * Parses newline-delimited streaming payloads coming from `/api/oracle/stream`.
+ *
+ * @param line - Raw NDJSON fragment emitted by civic SSE bridges.
+ * @returns Parsed structured chunk or null when encountering heartbeat tokens.
+ */
+const parseStructuredStreamChunk = (line: string): OracleStreamChunk | null => {
   const normalized = line.trim().startsWith('data:') ? line.trim().slice(5).trim() : line.trim();
 
   if (!normalized || normalized === '[DONE]') {
@@ -97,59 +161,74 @@ const parseStructuredChunk = (line: string): OracleStreamChunk | null => {
     return {
       delta: response.message,
       done: true,
-      trust: response.trust,
       response,
+      trust: response.trust,
     };
   }
 
   return null;
 };
 
-const buildStreamFallbackResponse = (
+/**
+ * Builds a deterministic Oracle payload when streaming terminates without structured metadata.
+ *
+ * @param payload - Original civic Oracle envelope providing continuity anchors.
+ * @param message - Concatenated streaming transcript assembled across chunked deltas.
+ * @param trust - Optional trust bundle inferred from partial structured chunks.
+ * @returns Structured Oracle response satisfying downstream Agentic expectations.
+ */
+const buildStreamFallbackOracleResponse = (
   payload: OracleRequest,
   message: string,
   trust?: TrustMetadata,
 ): OracleResponse => ({
+  cognitiveLevel: payload.cognitiveLevel,
+  confidence: trust?.confidence ?? ORACLE_STREAM_FALLBACK_CONFIDENCE,
   message,
-  tone: 'informative',
-  render: null,
-  renderProps: {},
+  nextAnticipated: null,
   primaryAction: {
-    label: 'Keep going',
     action: 'continue',
-  },
-  secondaryAction: null,
-  progress: {
-    step: 1,
-    total: 1,
-    label: 'Oracle response',
+    label: 'Keep going',
   },
   proactiveWarning: null,
+  progress: {
+    label: 'Oracle response',
+    step: 1,
+    total: 1,
+  },
+  render: null,
+  renderProps: {},
+  secondaryAction: null,
   stateTransition: payload.currentState,
-  cognitiveLevel: payload.cognitiveLevel,
-  nextAnticipated: null,
-  confidence: trust?.confidence ?? 0.9,
+  tone: 'informative',
   trust,
 });
 
+/**
+ * Streams Oracle NDJSON chunks while preserving cooperative cancellation semantics.
+ *
+ * @param payload - Civic dialogue envelope mirrored into streaming Oracle requests.
+ * @param signal - Optional abort scope propagated from UI cancellations or timeouts.
+ * @param token - Optional Firebase bearer token enabling authenticated streaming lanes.
+ */
 async function* streamOracleChunks(
   payload: OracleRequest,
   signal?: AbortSignal,
   token?: string | null,
 ): AsyncGenerator<OracleStreamChunk> {
-  const timeout = withTimeout(signal);
+  const timeout = createOracleTimeoutHandle(signal);
   let rawBuffer = '';
   let lineBuffer = '';
   let sawStructuredChunk = false;
 
   try {
-    const response = await fetch('/api/oracle/stream', {
-      method: 'POST',
+    const response = await fetch(ORACLE_STREAM_API_PATH, {
+      body: JSON.stringify(toApiOraclePayload(payload)),
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify(toApiPayload(payload)),
+      method: 'POST',
       signal: timeout.signal,
     });
 
@@ -158,8 +237,8 @@ async function* streamOracleChunks(
       yield {
         delta: fallback.message,
         done: true,
-        trust: fallback.trust,
         response: fallback,
+        trust: fallback.trust,
       };
       return;
     }
@@ -182,26 +261,26 @@ async function* streamOracleChunks(
 
       for (const line of lines) {
         try {
-          const parsed = parseStructuredChunk(line);
+          const parsed = parseStructuredStreamChunk(line);
           if (parsed) {
             sawStructuredChunk = true;
             yield parsed;
           }
-        } catch {
-          // Ignore incomplete non-NDJSON fragments; they are handled as a final JSON fallback.
+        } catch (_error: unknown) {
+          // Incomplete NDJSON fragments are expected mid-stream; discard until buffers refill.
         }
       }
     }
 
     if (lineBuffer.trim()) {
       try {
-        const parsed = parseStructuredChunk(lineBuffer);
+        const parsed = parseStructuredStreamChunk(lineBuffer);
         if (parsed) {
           sawStructuredChunk = true;
           yield parsed;
         }
-      } catch {
-        // Fall through to raw JSON parsing.
+      } catch (_error: unknown) {
+        // Fall through to consolidated JSON parsing below.
       }
     }
 
@@ -210,8 +289,8 @@ async function* streamOracleChunks(
       yield {
         delta: fallback.message,
         done: true,
-        trust: fallback.trust,
         response: fallback,
+        trust: fallback.trust,
       };
     }
   } finally {
@@ -219,12 +298,21 @@ async function* streamOracleChunks(
   }
 }
 
+/**
+ * Legacy streaming helper accumulating deltas before resolving a structured Oracle payload.
+ *
+ * @param payload - Civic envelope mirrored into streaming lanes.
+ * @param onToken - Incremental delta callback powering optimistic UI rendering.
+ * @param token - Optional Firebase bearer token authenticating streaming lanes.
+ * @param signal - Cooperative cancellation wiring mirrored from orchestrators.
+ * @returns Final structured Oracle response synthesized after iterator exhaustion.
+ */
 const streamOracleLegacy = async (
   payload: OracleRequest,
   onToken: (token: string) => void,
   token?: string | null,
   signal?: AbortSignal,
-) => {
+): Promise<OracleResponse> => {
   let text = '';
   let finalResponse: OracleResponse | null = null;
   let finalTrust: TrustMetadata | undefined;
@@ -242,7 +330,7 @@ const streamOracleLegacy = async (
     }
   }
 
-  return finalResponse ?? buildStreamFallbackResponse(payload, text, finalTrust);
+  return finalResponse ?? buildStreamFallbackOracleResponse(payload, text, finalTrust);
 };
 
 export function streamOracle(
@@ -261,7 +349,7 @@ export function streamOracle(
   signalOrHandler?: AbortSignal | ((token: string) => void),
   token?: string | null,
   signal?: AbortSignal,
-) {
+): AsyncGenerator<OracleStreamChunk> | Promise<OracleResponse> {
   if (typeof signalOrHandler === 'function') {
     return streamOracleLegacy(payload, signalOrHandler, token, signal);
   }

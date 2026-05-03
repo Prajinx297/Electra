@@ -1,13 +1,18 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { civicBus } from '../../events/civicEventBus';
 import { civicEvents } from '../../firebase/analytics';
 import { useFeatureFlag } from '../../hooks/useFeatureFlag';
 import type { CivicBadge, CivicScoreResponse } from '../../types';
 
-interface CivicScoreCardProps {
+/**
+ * Props for {@link CivicScoreCard}.
+ */
+export interface CivicScoreCardProps {
+  /** Controls drawer visibility for ambient civic score tooling. */
   open: boolean;
+  /** Closes the civic score drawer once learners dismiss celebrations or shares. */
   onClose: () => void;
 }
 
@@ -49,19 +54,21 @@ const eventPoints: Record<string, number> = {
   score_shared: 20,
 };
 
-const getBadgesForScore = (score: number) =>
-  badges.map((badge) => ({
+const getBadgesForScore = (score: number): CivicBadge[] =>
+  badges.map((badge: CivicBadge): CivicBadge => ({
     ...badge,
     earned: score >= badge.threshold,
   }));
 
-const getHighestBadge = (score: number) =>
+const getHighestBadge = (score: number): CivicBadge | null =>
   getBadgesForScore(score)
-    .filter((badge) => badge.earned)
+    .filter((badge: CivicBadge): boolean => badge.earned)
     .at(-1) ?? null;
 
-const getNextBadge = (score: number) =>
-  badges.find((badge) => score < badge.threshold) ?? badges.at(-1) ?? fallbackBadge;
+const getNextBadge = (score: number): CivicBadge =>
+  badges.find((badge: CivicBadge): boolean => score < badge.threshold) ??
+  badges.at(-1) ??
+  fallbackBadge;
 
 const loadLocalScore = (): CivicScoreResponse => {
   const raw = window.localStorage.getItem('electra:civic-score');
@@ -82,11 +89,17 @@ const loadLocalScore = (): CivicScoreResponse => {
   };
 };
 
-const saveLocalScore = (score: CivicScoreResponse) => {
+const saveLocalScore = (score: CivicScoreResponse): void => {
   window.localStorage.setItem('electra:civic-score', JSON.stringify(score));
 };
 
-export const CivicScoreCard = ({ open, onClose }: CivicScoreCardProps) => {
+/**
+ * Drawer-style civic score inspector celebrating learner streaks, badges, and share moments.
+ *
+ * @param props - Drawer visibility plus dismissal handler wired from {@link AppShell}.
+ * @returns Animated overlay summarizing civic streak mechanics with optional social sharing.
+ */
+export function CivicScoreCard({ open, onClose }: CivicScoreCardProps): ReactNode {
   const enabled = useFeatureFlag('civic_score_enabled');
   const [scoreState, setScoreState] = useState<CivicScoreResponse>(() => loadLocalScore());
   const [shareOpen, setShareOpen] = useState(false);
@@ -323,4 +336,4 @@ export const CivicScoreCard = ({ open, onClose }: CivicScoreCardProps) => {
       </motion.div>
     </AnimatePresence>
   );
-};
+}
