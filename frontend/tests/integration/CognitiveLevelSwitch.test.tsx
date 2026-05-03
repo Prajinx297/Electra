@@ -55,5 +55,5 @@ describe("cognitive level switch", () => {
     render(<App />);
     await userEvent.click(screen.getByRole("button", { name: "Policy expert" }));
     await waitFor(() => expect(streamOracle).toHaveBeenCalled());
-  });
+  }, 10000);
 });

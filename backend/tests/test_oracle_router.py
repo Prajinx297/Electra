@@ -21,38 +21,41 @@ def mock_oracle_response() -> OracleResponse:
 
 
 @pytest.mark.asyncio
-async def test_oracle_endpoint_success(mock_oracle_response: OracleResponse) -> None:
-    service = AsyncMock()
-    service.process.return_value = mock_oracle_response
-    app.dependency_overrides[get_oracle_service] = lambda: service
+async def test_oracle_endpoint_success(monkeypatch) -> None:
+    async def mock_generate(*args, **kwargs) -> dict[str, object]:
+        return {"message": "Your polling station is nearby.", "trust": {}}
+
+    import backend.services.gemini_service as gemini_service
+    monkeypatch.setattr(gemini_service.oracle_service, "generate", mock_generate)
     app.dependency_overrides[verify_rate_limit] = lambda: None
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
         response = await client.post(
-            "/api/v1/oracle",
+            "/api/oracle",
             json={
-                "user_input": "Where is my polling station?",
-                "cognitive_level": "simple",
-                "session_id": "test-session-abc",
-                "locale": "en",
+                "message": "Where is my polling station?",
+                "currentState": "home",
+                "cognitiveLevel": "simplified",
+                "language": "en",
+                "sessionId": "test-session-abc",
             },
         )
 
     app.dependency_overrides.clear()
     assert response.status_code == 200
-    assert response.json()["render_key"] == "map"
+    assert response.json()["message"] == "Your polling station is nearby."
 
 
 @pytest.mark.asyncio
 async def test_oracle_endpoint_validation_error() -> None:
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        response = await client.post("/api/v1/oracle", json={"user_input": ""})
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.post("/api/oracle", json={"message": ""})
     assert response.status_code == 422
 
 
 @pytest.mark.asyncio
 async def test_health_endpoint() -> None:
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        response = await client.get("/api/v1/health")
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
+        response = await client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "healthy"

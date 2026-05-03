@@ -22,61 +22,63 @@ declare global {
   }
 }
 
+// Fallback polling booths using Indian cities
+// Real booth data: voters.eci.gov.in or state CEO portal
 const fallbackLocations: PollingLocation[] = [
   {
     id: '1',
     name: 'Central Library',
-    address: '123 Main St',
-    hours: '7:00 AM - 8:00 PM',
-    lat: 40.7128,
-    lng: -74.006,
+    address: 'Shivaji Nagar, Pune, Maharashtra 411005',
+    hours: '7:00 AM – 6:00 PM',
+    lat: 18.5204,
+    lng: 73.8567,
     accessible: true,
-    curbside: true,
-    languages: ['English', 'Spanish'],
+    curbside: false,
+    languages: ['Marathi', 'Hindi', 'English'],
     parking: 'Street parking nearby',
   },
   {
     id: '2',
     name: 'Town Hall',
-    address: '50 River Rd',
-    hours: '7:00 AM - 8:00 PM',
-    lat: 40.719,
-    lng: -74.002,
+    address: 'Anna Nagar, Chennai, Tamil Nadu 600040',
+    hours: '7:00 AM – 6:00 PM',
+    lat: 13.0827,
+    lng: 80.2707,
     accessible: false,
     curbside: false,
-    languages: ['English'],
-    parking: 'Small lot',
+    languages: ['Tamil', 'English'],
+    parking: 'Limited parking',
   },
   {
     id: '3',
-    name: 'Community Center',
-    address: '22 Oak Ave',
-    hours: '6:00 AM - 9:00 PM',
-    lat: 40.726,
-    lng: -73.998,
+    name: 'Polling Booth No. 213 — Community Hall',
+    address: 'Karol Bagh, New Delhi 110005',
+    hours: '7:00 AM – 6:00 PM',
+    lat: 28.6516,
+    lng: 77.1901,
     accessible: true,
     curbside: false,
-    languages: ['English', 'French'],
-    parking: 'Accessible parking',
+    languages: ['Hindi', 'Urdu', 'English'],
+    parking: 'Metro parking at Karol Bagh station',
   },
 ];
 
 const PollingFinder = () => {
   const { language } = useElectraStore();
-  const [address, setAddress] = useState('New York City Hall');
+  const [address, setAddress] = useState('Shivaji Nagar, Pune');
   const [locations, setLocations] = useState<PollingLocation[]>(fallbackLocations);
   const [accessibleOnly, setAccessibleOnly] = useState(false);
   const [activeLocation, setActiveLocation] = useState<PollingLocation>(
     fallbackLocations[0] ?? {
       id: 'fallback',
-      name: 'Election Office',
-      address: 'Local election office',
-      hours: 'Check official hours',
-      lat: 0,
-      lng: 0,
+      name: 'District Election Office',
+      address: 'Contact your local District Election Officer',
+      hours: 'Check official hours at voters.eci.gov.in',
+      lat: 20.5937,
+      lng: 78.9629,
       accessible: true,
       curbside: false,
-      languages: ['English'],
+      languages: ['Hindi', 'English'],
       parking: 'Call ahead',
     },
   );
@@ -113,7 +115,7 @@ const PollingFinder = () => {
 
     const map = new window.google.maps.Map(mapRef.current, {
       center: { lat: activeLocation.lat, lng: activeLocation.lng },
-      zoom: 12,
+      zoom: 14,
     });
 
     for (const location of locations) {
@@ -126,7 +128,7 @@ const PollingFinder = () => {
         title: location.name,
       });
       const info = new window.google.maps.InfoWindow({
-        content: `<div><strong>${location.name}</strong><br/>${location.hours}<br/>${location.accessible ? 'Accessible' : 'Standard access'}</div>`,
+        content: `<div><strong>${location.name}</strong><br/>${location.hours}<br/>${location.accessible ? 'Wheelchair accessible' : 'Standard access'}</div>`,
       });
       marker.addListener('click', () => info.open({ anchor: marker, map }));
     }
@@ -137,9 +139,10 @@ const PollingFinder = () => {
     [accessibleOnly, locations],
   );
 
+  // ECI elections are typically held in April–May; use a general reminder date
   const downloadCalendar = () => {
-    const start = '20261103T080000';
-    const end = '20261103T090000';
+    const start = '20270426T070000';
+    const end = '20270426T180000';
     const content = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
@@ -148,6 +151,7 @@ const PollingFinder = () => {
       `DTSTART:${start}`,
       `DTEND:${end}`,
       `LOCATION:${activeLocation.address}`,
+      'DESCRIPTION:General Elections polling day. Bring your EPIC or any ECI-approved document. Polling hours: 7 AM to 6 PM.',
       'END:VEVENT',
       'END:VCALENDAR',
     ].join('\n');
@@ -162,12 +166,16 @@ const PollingFinder = () => {
 
   return (
     <section className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_8px_24px_var(--shadow)]">
-      <h2 className="text-[1.6rem] font-bold text-[var(--ink)]">Find where you go to vote</h2>
+      <h2 className="text-[1.6rem] font-bold text-[var(--ink)]">Find your polling booth</h2>
+      <p className="mt-2 text-sm text-[var(--ink-secondary)]">
+        Enter your address to find your assigned booth. Each constituency has a Booth Level Officer (BLO) — max 1,500 voters per booth.
+      </p>
       <label className="mt-4 block">
         <span className="mb-2 block text-sm font-semibold text-[var(--ink)]">Your address</span>
         <input
           value={address}
           onChange={(event) => setAddress(event.target.value)}
+          placeholder="e.g. Andheri West, Mumbai"
           className="min-h-12 w-full rounded-[16px] border border-[var(--border)] px-4"
         />
       </label>
@@ -204,10 +212,18 @@ const PollingFinder = () => {
             <p className="font-bold">{activeLocation.name}</p>
             <p className="mt-1">{activeLocation.hours}</p>
             <p className="mt-1">
-              {activeLocation.accessible ? 'Wheelchair-friendly' : 'Call ahead for access help'}
+              {activeLocation.accessible ? 'Wheelchair-accessible booth' : 'Contact BLO for accessibility needs'}
             </p>
-            <p className="mt-1">
-              {activeLocation.curbside ? 'Curbside voting available' : 'No curbside listing'}
+            <p className="mt-1 text-sm text-[var(--ink-secondary)]">
+              Verify booth at{' '}
+              <a
+                href="https://voters.eci.gov.in"
+                target="_blank"
+                rel="noreferrer"
+                className="underline"
+              >
+                voters.eci.gov.in
+              </a>
             </p>
           </div>
           <div className="mt-4 flex flex-wrap gap-3">

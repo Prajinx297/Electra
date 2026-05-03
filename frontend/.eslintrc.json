@@ -10,6 +10,7 @@
     "react",
     "react-hooks",
     "jsx-a11y",
+    "jsdoc",
     "import",
     "unicorn"
   ],

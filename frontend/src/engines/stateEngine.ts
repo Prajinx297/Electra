@@ -14,9 +14,11 @@ import type {
   RenderKey,
   SessionPayload,
 } from '../types';
+import { FALLBACK_ORACLE_RESPONSE } from '../utils/oracleParser';
 import { readLanguagePreference } from '../utils/validators';
 
 import { predictNextRender, scorePrediction } from './predictionEngine';
+
 
 const node = (
   id: JourneyState,
@@ -456,6 +458,7 @@ export const JOURNEY_GRAPH: Record<JourneyState, JourneyNode> = {
 
 export const JOURNEY_STATES = Object.keys(JOURNEY_GRAPH) as JourneyState[];
 
+// ts-prune-ignore-next
 export interface ElectraStoreState {
   journeyId: string;
   currentState: JourneyState;
@@ -492,9 +495,8 @@ export interface ElectraStoreState {
 }
 
 const createInitialResponse = (): OracleResponse => ({
+  ...FALLBACK_ORACLE_RESPONSE,
   message: 'Hi. I can help you take the next voting step.',
-  tone: 'warm',
-  render: 'WelcomeStep',
   renderProps: {
     title: 'You are not behind.',
     description: 'We will do one small step together.',
@@ -503,22 +505,19 @@ const createInitialResponse = (): OracleResponse => ({
     label: 'Start',
     action: 'start',
   },
-  secondaryAction: null,
   progress: {
     step: 1,
     total: 7,
     label: 'Getting started',
   },
-  proactiveWarning: null,
-  stateTransition: 'WELCOME',
-  cognitiveLevel: 'simple',
-  nextAnticipated: 'GoalSelect',
   confidence: 0.97,
 });
 
+// ts-prune-ignore-next
 export const canTransition = (from: JourneyState, to: JourneyState) =>
   JOURNEY_GRAPH[from].allowedTransitions.includes(to) || from === to;
 
+// ts-prune-ignore-next
 export const buildHistoryEntry = (
   state: JourneyState,
   decision: string,
@@ -533,6 +532,7 @@ export const buildHistoryEntry = (
   rewound,
 });
 
+// ts-prune-ignore-next
 export const resolveNextState = (from: JourneyState, to: JourneyState): JourneyState =>
   canTransition(from, to) ? to : from;
 

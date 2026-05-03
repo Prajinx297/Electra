@@ -5,13 +5,16 @@ from fastapi import Request, HTTPException
 logger = logging.getLogger(__name__)
 
 
-async def rate_limit_middleware(request: Request, call_next):
+from typing import Callable, Awaitable
+from fastapi import Response
+
+async def rate_limit_middleware(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
     """Token bucket rate limiter. Fails open if Redis is unavailable."""
     # Skip rate limiting for health checks
     if request.url.path.startswith("/health"):
         return await call_next(request)
 
-    from core.redis import redis_client
+    from backend.core.redis import redis_client
     if redis_client is None:
         # Redis not available — fail open
         return await call_next(request)

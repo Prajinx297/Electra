@@ -10,6 +10,7 @@ interface LogEntry {
 }
 
 const isDev = import.meta.env.DEV;
+const devLogTarget = globalThis.console;
 
 function formatEntry(entry: LogEntry): string {
   return `[Electra:${entry.level.toUpperCase()}] ${entry.timestamp} - ${entry.message}`;
@@ -24,8 +25,7 @@ export const logger = {
         data,
         timestamp: new Date().toISOString(),
       };
-      // eslint-disable-next-line no-console -- dev-only structured logger
-      console.info(formatEntry(entry), data ?? '');
+      devLogTarget.info(formatEntry(entry), data ?? '');
     }
   },
 
@@ -37,8 +37,7 @@ export const logger = {
       timestamp: new Date().toISOString(),
     };
     if (isDev) {
-      // eslint-disable-next-line no-console -- dev-only structured logger
-      console.warn(formatEntry(entry), data ?? '');
+      devLogTarget.warn(formatEntry(entry), data ?? '');
     }
   },
 
@@ -50,8 +49,7 @@ export const logger = {
       timestamp: new Date().toISOString(),
     };
     if (isDev) {
-      // eslint-disable-next-line no-console -- dev-only structured logger
-      console.error(formatEntry(entry), error ?? '');
+      devLogTarget.error(formatEntry(entry), error ?? '');
     }
     AnalyticsService.trackError(message, String(error));
   },

@@ -1,9 +1,13 @@
-from enum import Enum
+"""Oracle request and response models."""
+
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator
 
 
-class RenderKey(str, Enum):
+class RenderKey(StrEnum):
+    """Frontend render targets supported by Oracle responses."""
+
     MAP = "map"
     FORM = "form"
     QUIZ = "quiz"
@@ -13,13 +17,17 @@ class RenderKey(str, Enum):
     SUMMARY = "summary"
 
 
-class CognitiveLevel(str, Enum):
+class CognitiveLevel(StrEnum):
+    """Supported explanation depths for civic guidance."""
+
     SIMPLE = "simple"
     DETAILED = "detailed"
     LEGAL = "legal"
 
 
 class JourneyNode(BaseModel):
+    """Single prior step in a user's civic journey."""
+
     id: str = Field(..., min_length=1)
     timestamp: int = Field(..., gt=0)
     render_key: RenderKey
@@ -27,6 +35,8 @@ class JourneyNode(BaseModel):
 
 
 class OracleRequest(BaseModel):
+    """Validated request body for an Oracle query."""
+
     user_input: str = Field(..., min_length=1, max_length=2000)
     cognitive_level: CognitiveLevel
     session_id: str = Field(..., min_length=1)
@@ -36,12 +46,15 @@ class OracleRequest(BaseModel):
     @field_validator("session_id")
     @classmethod
     def validate_session_id(cls, value: str) -> str:
+        """Validate that session identifiers are long enough to avoid collisions."""
         if len(value) < 8:
-            raise ValueError("session_id must be at least 8 characters")
+            raise ValueError(f"{cls.__name__}.session_id must be at least 8 characters")
         return value
 
 
 class OracleResponse(BaseModel):
+    """Structured Oracle output consumed by the frontend renderer."""
+
     render_key: RenderKey
     explanation: str
     component_props: dict[str, object] = Field(default_factory=dict)

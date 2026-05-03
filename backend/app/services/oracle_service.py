@@ -27,7 +27,11 @@ Return ONLY the JSON. No markdown. No preamble. No explanation outside the JSON.
 
 
 class OracleService:
+    """Generate, validate, and cache structured civic Oracle responses."""
+
     def __init__(self, api_key: str, cache: CacheService) -> None:
+        """Create an Oracle service using Gemini when an API key is configured."""
+
         self._api_key = api_key
         self._cache = cache
         self._model: GenerativeModel | None = None
@@ -36,6 +40,8 @@ class OracleService:
             self._model = GenerativeModel("gemini-1.5-pro")
 
     async def process(self, request: OracleRequest) -> OracleResponse:
+        """Return a cached, generated, or local fallback response for a request."""
+
         cache_key = self._build_cache_key(request)
         cached = await self._cache.get(cache_key)
         if cached is not None:
@@ -56,10 +62,14 @@ class OracleService:
         return parsed
 
     def _build_cache_key(self, request: OracleRequest) -> str:
+        """Build a deterministic cache key for a request."""
+
         digest = hashlib.sha256(request.user_input.encode("utf-8")).hexdigest()
         return f"oracle:{request.session_id}:{digest}:{request.cognitive_level.value}"
 
     def _build_prompt(self, request: OracleRequest) -> str:
+        """Build the model prompt from the request and recent journey history."""
+
         history_summary = "\n".join(
             f"- Step {index + 1}: {node.user_input} -> {node.render_key.value}"
             for index, node in enumerate(request.journey_history[-5:])
@@ -74,6 +84,8 @@ Journey History (last 5 steps):
 """
 
     def _mock_response(self, request: OracleRequest) -> OracleResponse:
+        """Return a deterministic local response when Gemini is not configured."""
+
         return OracleResponse(
             render_key=RenderKey.FORM,
             explanation=f"Start with this civic step: {request.user_input}",

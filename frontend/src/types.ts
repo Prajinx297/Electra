@@ -14,15 +14,6 @@ export const CognitiveLevel = {
 
 export type CognitiveLevel = (typeof CognitiveLevel)[keyof typeof CognitiveLevel];
 
-export const JourneyStatus = {
-  Idle: 'idle',
-  Loading: 'loading',
-  Success: 'success',
-  Error: 'error',
-} as const;
-
-export type JourneyStatus = (typeof JourneyStatus)[keyof typeof JourneyStatus];
-
 export type Tone = 'warm' | 'informative' | 'warning' | 'celebratory';
 
 export type JourneyCategory =
@@ -108,7 +99,7 @@ export const RenderKey = {
 
 export type RenderKey = (typeof RenderKey)[keyof typeof RenderKey];
 
-export interface ProgressState {
+interface ProgressState {
   step: number;
   total: number;
   label: string;
@@ -142,7 +133,7 @@ export interface OracleResponse {
   trust?: TrustMetadata | undefined;
 }
 
-export interface CivicSource {
+interface CivicSource {
   id: string;
   title: string;
   url: string;
@@ -164,7 +155,7 @@ export interface OracleStreamChunk {
   response?: OracleResponse | undefined;
 }
 
-export type BadgeId =
+type BadgeId =
   | 'civic-newcomer'
   | 'informed-voter'
   | 'civic-champion'
@@ -185,22 +176,6 @@ export interface CivicScoreResponse {
   streakDays: number;
   highestBadge: CivicBadge | null;
 }
-
-export interface ScoreUpdate extends CivicScoreResponse {
-  addedPoints: number;
-  newlyUnlocked: CivicBadge[];
-  reason: string;
-}
-
-export type CivicScoreEventType =
-  | 'onboarding_complete'
-  | 'oracle_question'
-  | 'journey_step_complete'
-  | 'journey_complete'
-  | 'outdated_source_reviewed'
-  | 'simulator_run'
-  | 'score_shared'
-  | 'return_streak';
 
 export interface BallotSelection {
   president: string;
@@ -262,7 +237,7 @@ export interface OracleRequest {
   profile?: OnboardingProfile | null | undefined;
 }
 
-export interface OracleJourneyNode {
+interface OracleJourneyNode {
   id: string;
   timestamp: number;
   renderKey: RenderKey;
@@ -275,14 +250,6 @@ export interface ConfusionEvent {
   type: 'reread' | 'retreat' | 'timeout' | 'stuck';
   durationMs: number;
   sessionId: string;
-}
-
-export interface UserState {
-  uid: string | null;
-  isAnonymous: boolean;
-  civicScore: number;
-  cognitiveLevel: CognitiveLevel;
-  locale: string;
 }
 
 export interface JourneyNode {

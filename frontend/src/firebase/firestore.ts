@@ -22,6 +22,8 @@ import type {
 
 import { db } from './config';
 
+
+
 interface StoredSession extends SessionPayload {
   updatedAt?: unknown;
 }
@@ -56,6 +58,7 @@ export const persistSession = async (userId: string, payload: SessionPayload) =>
   );
 };
 
+// ts-prune-ignore-next
 export const loadSession = async (userId: string) => {
   const snapshot = await getDoc(doc(db, 'sessions', userId).withConverter(sessionConverter));
   return snapshot.exists() ? snapshot.data() : null;

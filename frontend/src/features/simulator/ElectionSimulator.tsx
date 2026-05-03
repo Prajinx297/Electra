@@ -23,14 +23,14 @@ interface ElectionSimulatorProps {
 
 const stages = [
   'Ballot Design & Ingestion',
-  'Tallying Engine',
-  'Canvass & Certification',
+  'Tallying & Counting',
+  'Canvass review',
   'Post-Election Audit',
 ];
 
 const fallbackBallot = (): BallotEvent => ({
-  serial: `EL-${Math.floor(Math.random() * 900000 + 100000)}`,
-  precinct: 'PCT-014',
+  serial: `EVM-${Math.floor(Math.random() * 900000 + 100000)}`,
+  precinct: 'Booth-014',
   timestamp: new Date().toISOString(),
   encryptedPayload: Array.from({ length: 96 }, () => Math.round(Math.random()).toString()).join(''),
   signature: crypto.randomUUID(),
@@ -42,20 +42,20 @@ const fallbackTally = (anomalyInjected: boolean): TallyResult => ({
   confidenceInterval: anomalyInjected ? 4.8 : 1.2,
   anomalyInjected,
   totals: [
-    { candidate: 'Rivera', votes: anomalyInjected ? 6100 : 5840 },
-    { candidate: 'Chen', votes: anomalyInjected ? 6722 : 6018 },
-    { candidate: 'Patel', votes: anomalyInjected ? 1020 : 852 },
+    { candidate: 'Sharma', votes: anomalyInjected ? 6100 : 5840 },
+    { candidate: 'Khan', votes: anomalyInjected ? 6722 : 6018 },
+    { candidate: 'Iyer', votes: anomalyInjected ? 1020 : 852 },
   ],
-  affectedPrecinct: anomalyInjected ? 'PCT-044' : undefined,
+  affectedPrecinct: anomalyInjected ? 'Booth-044' : undefined,
 });
 
 const fallbackCertification = (): CertificationEvent => ({
   certifiedAt: new Date().toISOString(),
   certificateId: `CERT-${Math.floor(Math.random() * 90000 + 10000)}`,
   provenanceChain: [
-    'Precinct event frame signed',
-    'County canvass board reviewed',
-    'State certification ledger appended',
+    'Form 17C matched with EVM totals',
+    'Returning Officer (RO) reviewed counting',
+    'Election Commission of India (ECI) certified',
   ],
   summary: 'Mock certification complete with provenance chain attached.',
 });
@@ -65,7 +65,7 @@ const fallbackAudit = (): AuditResult => ({
   machineCount: 187,
   handCount: 187,
   discrepancy: 0,
-  recommendation: 'No material discrepancy found. Preserve chain of custody records.',
+  recommendation: 'No material discrepancy between EVM counts and VVPAT slips. Record verified.',
 });
 
 async function postJson<T>(url: string, body: unknown, fallback: () => T): Promise<T> {
@@ -92,8 +92,8 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
   const { currentState, history, cognitiveLevel, language, journeyId } = useElectraStore();
   const [stage, setStage] = useState(0);
   const [ballot, setBallot] = useState<BallotSelection>({
-    president: 'Rivera',
-    senator: 'Okafor',
+    president: 'Sharma',
+    senator: 'Gupta',
     measureA: 'yes',
   });
   const [ballotEvent, setBallotEvent] = useState<BallotEvent | null>(null);
@@ -105,7 +105,7 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
 
   const narrationRequest: OracleRequest = useMemo(
     () => ({
-      userMessage: `You are ELECTRA's civic narrator. Explain ${stages[stage]} to a ${cognitiveLevel} voter. Include: what officials do, what safeguards exist, what citizens can verify. Respond in 2-3 sentences.`,
+      userMessage: `You are ELECTRA's civic narrator. Explain ${stages[stage]} to a ${cognitiveLevel} Indian voter. Include: what officials (like RO, BLO) do, what safeguards (like VVPAT) exist, what citizens can verify. Respond in 2-3 sentences.`,
       currentState,
       history,
       cognitiveLevel,
@@ -131,7 +131,7 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
   const handleSubmitBallot = async () => {
     const event = await postJson<BallotEvent>(
       '/api/simulator/ingest',
-      { selection: ballot, precinct: 'PCT-014' },
+      { selection: ballot, precinct: 'Booth-014' },
       fallbackBallot,
     );
     setBallotEvent(event);
@@ -235,33 +235,33 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
             {stage === 0 ? (
               <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
                 <form className="rounded-lg border border-white/10 bg-white/10 p-5">
-                  <h3 className="text-xl font-bold">Mock ballot</h3>
+                  <h3 className="text-xl font-bold">Mock EVM Vote</h3>
                   <label className="mt-4 block text-sm">
-                    President
+                    Member of Parliament (Lok Sabha)
                     <select
                       value={ballot.president}
                       onChange={(event) => setBallot({ ...ballot, president: event.target.value })}
                       className="mt-2 min-h-12 w-full rounded-lg bg-white px-3 text-[#06111f]"
                     >
-                      <option>Rivera</option>
-                      <option>Chen</option>
-                      <option>Patel</option>
+                      <option>Sharma</option>
+                      <option>Khan</option>
+                      <option>Iyer</option>
                     </select>
                   </label>
                   <label className="mt-4 block text-sm">
-                    Senator
+                    Member of Legislative Assembly (MLA)
                     <select
                       value={ballot.senator}
                       onChange={(event) => setBallot({ ...ballot, senator: event.target.value })}
                       className="mt-2 min-h-12 w-full rounded-lg bg-white px-3 text-[#06111f]"
                     >
-                      <option>Okafor</option>
-                      <option>Nguyen</option>
-                      <option>Garcia</option>
+                      <option>Gupta</option>
+                      <option>Reddy</option>
+                      <option>Singh</option>
                     </select>
                   </label>
                   <fieldset className="mt-4">
-                    <legend className="text-sm">Local Measure A</legend>
+                    <legend className="text-sm">Local Measure</legend>
                     <div className="mt-2 flex gap-2">
                       {(['yes', 'no'] as const).map((choice) => (
                         <button
@@ -290,11 +290,11 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
                 </form>
 
                 <div className="rounded-lg border border-white/10 bg-black/20 p-5">
-                  <h3 className="text-xl font-bold">Encrypted event frame</h3>
+                  <h3 className="text-xl font-bold">Encrypted EVM Event Frame</h3>
                   {ballotEvent ? (
                     <div className="mt-4 space-y-3 text-sm">
                       <p>Serial: {ballotEvent.serial}</p>
-                      <p>Precinct: {ballotEvent.precinct}</p>
+                      <p>Booth: {ballotEvent.precinct}</p>
                       <p>Timestamp: {ballotEvent.timestamp}</p>
                       <p className="break-all font-mono text-emerald-200">
                         {ballotEvent.encryptedPayload}
@@ -317,13 +317,13 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
               <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
                 <div className="rounded-lg border border-white/10 bg-white/10 p-5">
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="text-xl font-bold">Live tally</h3>
+                    <h3 className="text-xl font-bold">Live Tally (Counting Center)</h3>
                     <button
                       type="button"
                       onClick={() => void handleRunTally(false)}
                       className="min-h-10 rounded-lg bg-white px-3 text-sm font-bold text-[#06111f]"
                     >
-                      Run count
+                      Run EVM count
                     </button>
                   </div>
                   <div className="mt-5 h-[360px]">
@@ -352,7 +352,7 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
                 <div className="rounded-lg border border-white/10 bg-black/20 p-5">
                   <p className="text-sm text-slate-300">Total votes</p>
                   <p className="text-3xl font-bold">{tally?.totalVotes ?? 0}</p>
-                  <p className="mt-4 text-sm text-slate-300">Precincts reporting</p>
+                  <p className="mt-4 text-sm text-slate-300">Booths reporting</p>
                   <p className="text-2xl font-bold">{tally?.precinctsReporting ?? 0}</p>
                   <p className="mt-4 text-sm text-slate-300">Confidence interval</p>
                   <p className="text-2xl font-bold">+/-{tally?.confidenceInterval ?? 0}%</p>
@@ -367,7 +367,7 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
                   ) : null}
                   {tally?.anomalyInjected ? (
                     <p className="mt-4 rounded-lg bg-amber-300/20 p-3 text-sm text-amber-100">
-                      Confidence interval warning in {tally.affectedPrecinct}.
+                      Confidence interval warning in {tally.affectedPrecinct}. VVPAT manual audit required.
                     </p>
                   ) : null}
                   <button
@@ -386,10 +386,10 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
                 <div className="rounded-lg border border-white/10 bg-white/10 p-5">
                   <h3 className="text-xl font-bold">Canvass checklist</h3>
                   {[
-                    'Signature verification',
-                    'Provisional ballot review',
-                    'Precinct reconciliation',
-                    'Public board meeting',
+                    'Form 17C verification by polling agents',
+                    'EVM seal integrity check',
+                    'Reconciliation of votes by RO',
+                    'Result Declaration by ECI',
                   ].map((item) => (
                     <details
                       key={item}
@@ -397,7 +397,7 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
                     >
                       <summary className="cursor-pointer font-semibold">{item}</summary>
                       <p className="mt-3 text-sm text-slate-200">
-                        Audit Trail: clerk initials, timestamp, ledger hash, observer note.
+                        Audit Trail: Presiding Officer signature, timestamp, EVM Control Unit hash, Observer sign-off.
                       </p>
                     </details>
                   ))}
@@ -431,9 +431,9 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
             {stage === 3 ? (
               <div className="grid gap-5 lg:grid-cols-2">
                 <div className="rounded-lg border border-white/10 bg-white/10 p-5">
-                  <h3 className="text-xl font-bold">Random audit selection</h3>
+                  <h3 className="text-xl font-bold">Random VVPAT Audit</h3>
                   <p className="mt-2 text-slate-200">
-                    Random seed selects ballots for a hand recount sample.
+                    ECI mandate: Randomly select 5 VVPAT machines per assembly constituency for mandatory hand-slip counting.
                   </p>
                   <button
                     type="button"
@@ -445,9 +445,9 @@ export const ElectionSimulator = ({ onClose }: ElectionSimulatorProps) => {
                   {audit ? (
                     <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
                       <div className="rounded-lg bg-black/20 p-3">
-                        Machine: {audit.machineCount}
+                        EVM Count: {audit.machineCount}
                       </div>
-                      <div className="rounded-lg bg-black/20 p-3">Hand: {audit.handCount}</div>
+                      <div className="rounded-lg bg-black/20 p-3">VVPAT Slips: {audit.handCount}</div>
                       <div className="rounded-lg bg-black/20 p-3">
                         Sampled: {audit.ballotsSampled}
                       </div>

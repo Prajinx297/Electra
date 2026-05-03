@@ -9,6 +9,7 @@ import { ProactiveWarning } from '../shared/ProactiveWarning';
 
 import { OracleMessage } from './OracleMessage';
 
+
 interface OraclePanelProps {
   response: OracleResponse;
   language: LanguageCode;

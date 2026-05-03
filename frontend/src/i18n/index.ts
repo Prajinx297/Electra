@@ -1,7 +1,9 @@
+
 import type { LanguageCode, TranslationDictionary } from '../types';
 
 import { esLocale } from './locales/es';
 import { frLocale } from './locales/fr';
+
 
 const toDictionary = (locale: TranslationDictionary): TranslationDictionary => ({
   appTitle: locale.appTitle,

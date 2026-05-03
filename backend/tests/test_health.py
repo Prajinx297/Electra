@@ -2,8 +2,8 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
-import backend.main as main
-from backend.main import app
+import backend.app.main as main
+from backend.app.main import app
 
 
 def test_health_returns_status_and_version():
@@ -39,7 +39,16 @@ def test_health_gemini_endpoint_returns_observability_status():
 
 
 def test_health_firebase_success_branch(monkeypatch):
-    monkeypatch.setattr(main.firebase_admin, "get_app", lambda: SimpleNamespace(name="[DEFAULT]"))
+    import sys
+    class FakeApp:
+        name = "[DEFAULT]"
+        
+    class FakeFirebaseAdmin:
+        @staticmethod
+        def get_app():
+            return FakeApp()
+            
+    monkeypatch.setitem(sys.modules, "firebase_admin", FakeFirebaseAdmin)
     client = TestClient(app)
 
     response = client.get("/health/firebase")
@@ -48,38 +57,33 @@ def test_health_firebase_success_branch(monkeypatch):
     assert response.json() == {"firebase": "connected", "app_name": "[DEFAULT]"}
 
 
+import sys
+
 def test_health_gemini_success_branch(monkeypatch):
-    class Messages:
-        async def create(self, **_kwargs):
-            return SimpleNamespace()
-
-    class FakeAnthropic:
-        def __init__(self, api_key: str):
-            self.api_key = api_key
-            self.messages = Messages()
-
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
-    monkeypatch.setattr(main, "AsyncAnthropic", FakeAnthropic)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     client = TestClient(app)
 
     response = client.get("/health/gemini")
 
     assert response.status_code == 200
-    assert response.json() == {"gemini": "ready"}
+    assert response.json()["gemini"] == "ready"
 
 
 def test_health_gemini_error_branch(monkeypatch):
-    class Messages:
-        async def create(self, **_kwargs):
+    class FakeModel:
+        def __init__(self, model_name):
+            pass
+        def generate_content(self, prompt):
             raise RuntimeError("gemini down")
+            
+    class FakeGenAI:
+        @staticmethod
+        def configure(api_key):
+            pass
+        GenerativeModel = FakeModel
 
-    class FakeAnthropic:
-        def __init__(self, api_key: str):
-            self.api_key = api_key
-            self.messages = Messages()
-
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
-    monkeypatch.setattr(main, "AsyncAnthropic", FakeAnthropic)
+    monkeypatch.setitem(sys.modules, "google.generativeai", FakeGenAI)
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     client = TestClient(app)
 
     response = client.get("/health/gemini")

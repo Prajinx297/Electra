@@ -7,8 +7,8 @@ describe("BallotWalkthrough", () => {
   it("renders ballot ingestion stages and advances", async () => {
     render(<BallotWalkthrough />);
 
-    expect(screen.getByText("Sign your envelope")).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Next stage" }));
-    expect(screen.getByText("Seal the envelope")).toBeInTheDocument();
+    expect(screen.getByText("Arrive at your polling booth")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Next step" }));
+    expect(screen.getByText("Identity verification by Presiding Officer")).toBeInTheDocument();
   });
 });

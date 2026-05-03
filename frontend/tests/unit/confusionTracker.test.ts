@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as React from "react";
 import { render } from "@testing-library/react";
 import {
@@ -18,6 +18,10 @@ vi.mock("../../src/firebase/analytics", () => ({
 }));
 
 describe("confusion tracker", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("sends analytics events", async () => {
     await trackJourneyStarted("journey-1", "simple", "en");
     await trackStepCompleted("WELCOME", 1200, false);
@@ -55,6 +59,20 @@ describe("confusion tracker", () => {
     vi.useRealTimers();
   });
 
+  it("skips time tracking for immediate unmounts", () => {
+    vi.useFakeTimers();
+    const Harness = () => {
+      useConfusionTimer("WELCOME");
+      return null;
+    };
+
+    const { unmount } = render(React.createElement(Harness));
+    unmount();
+
+    expect(trackEvent).not.toHaveBeenCalledWith("confusion_time_spent", expect.anything());
+    vi.useRealTimers();
+  });
+
   it("fires a reread analytics event when an observed oracle re-enters view", () => {
     let observerCallback: IntersectionObserverCallback = () => undefined;
     class IntersectionObserverMock {
@@ -74,10 +92,30 @@ describe("confusion tracker", () => {
     };
 
     render(React.createElement(Harness));
+    observerCallback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
     observerCallback([{ isIntersecting: false } as IntersectionObserverEntry], {} as IntersectionObserver);
     observerCallback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
 
     expect(trackEvent).toHaveBeenCalledWith("oracle_reread", { stepId: "ID_CHECK" });
+    vi.unstubAllGlobals();
+  });
+
+  it("does not observe when the oracle ref has no element", () => {
+    class IntersectionObserverMock {
+      observe = vi.fn();
+      unobserve = vi.fn();
+      disconnect = vi.fn();
+    }
+    vi.stubGlobal("IntersectionObserver", IntersectionObserverMock);
+
+    const Harness = () => {
+      useOracleScrollTracker("ID_CHECK");
+      return null;
+    };
+
+    const { unmount } = render(React.createElement(Harness));
+    unmount();
+    expect(trackEvent).not.toHaveBeenCalledWith("oracle_reread", expect.anything());
     vi.unstubAllGlobals();
   });
 });

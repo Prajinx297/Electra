@@ -23,6 +23,8 @@ describe("accessibility helpers", () => {
     document.body.appendChild(wrapper);
     focusFirstInteractive(wrapper);
     expect(document.activeElement).toBe(button);
+    focusFirstInteractive(null);
+    expect(document.activeElement).toBe(button);
     wrapper.remove();
   });
 
@@ -30,6 +32,7 @@ describe("accessibility helpers", () => {
     const contrast = calculateContrastRatio("#1A1A2E", "#FAFAF8");
     expect(contrast.ratio).toBeGreaterThan(7);
     expect(contrast.passesAAA).toBe(true);
+    expect(calculateContrastRatio("#000", "#fff").passesAAA).toBe(true);
     expect(calculateContrastRatio("#888888", "#999999").passesAA).toBe(false);
   });
 });

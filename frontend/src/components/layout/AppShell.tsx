@@ -19,6 +19,7 @@ import { OraclePanel } from '../oracle/OraclePanel';
 import { ContextPanel } from './ContextPanel';
 import { Header } from './Header';
 
+
 interface AppShellProps {
   userLabel: string;
   busy: boolean;

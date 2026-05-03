@@ -23,6 +23,64 @@ vi.mock("reactflow", () => {
   };
 });
 
+vi.mock("framer-motion", () => {
+  const motionComponentCache = new Map<
+    string,
+    React.ComponentType<{ children?: React.ReactNode } & Record<string, unknown>>
+  >();
+  const motionPropNames = new Set([
+    "animate",
+    "custom",
+    "drag",
+    "dragConstraints",
+    "dragElastic",
+    "exit",
+    "initial",
+    "layout",
+    "layoutId",
+    "transition",
+    "variants",
+    "whileFocus",
+    "whileHover",
+    "whileTap"
+  ]);
+  const omitMotionProps = (props: Record<string, unknown>) => {
+    return Object.fromEntries(
+      Object.entries(props).filter(([name]) => !motionPropNames.has(name))
+    );
+  };
+  const getMotionComponent = (tag: string | symbol) => {
+    const tagName = String(tag);
+    const cached = motionComponentCache.get(tagName);
+
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    const MotionComponent = ({
+      children,
+      ...props
+    }: { children?: React.ReactNode } & Record<string, unknown>) =>
+      React.createElement(tagName, omitMotionProps(props), children);
+    motionComponentCache.set(tagName, MotionComponent);
+
+    return MotionComponent;
+  };
+  const motion = new Proxy(
+    {},
+    {
+      get: (_target, tag: string | symbol) => getMotionComponent(tag)
+    }
+  );
+
+  return {
+    AnimatePresence: ({ children }: { children?: React.ReactNode }) =>
+      React.createElement(React.Fragment, null, children),
+    motion,
+    useReducedMotion: () => true
+  };
+});
+
 vi.mock("recharts", () => {
   const passthrough = ({ children }: { children?: React.ReactNode }) =>
     React.createElement("div", null, children);

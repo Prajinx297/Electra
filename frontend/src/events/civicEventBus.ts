@@ -1,5 +1,6 @@
 import type { CivicBadge, OracleResponse } from '../types';
 
+// ts-prune-ignore-next
 export type CivicBusEvent =
   | { type: 'ORACLE_RESPONSE'; payload: OracleResponse }
   | { type: 'STEP_COMPLETED'; payload: { stepId: string; duration: number } }

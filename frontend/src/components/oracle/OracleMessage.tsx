@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 
 import type { Tone } from '../../types';
 import { buildOracleAriaLabel } from '../../utils/accessibilityHelpers';
+import { getEntranceMotionProps } from '../../utils/motion';
+
 
 interface OracleMessageProps {
   message: string;
@@ -34,12 +36,7 @@ export const OracleMessage = ({ message, tone }: OracleMessageProps): JSX.Elemen
   return (
     <motion.div
       className="rounded-[24px] bg-[var(--surface)] p-5 shadow-[0_8px_24px_var(--shadow)]"
-      {...(reducedMotion
-        ? {}
-        : {
-            initial: { opacity: 0, y: 8 },
-            animate: { opacity: 1, y: 0 },
-          })}
+      {...getEntranceMotionProps(reducedMotion)}
       transition={{ duration: reducedMotion ? 0 : 0.2 }}
       role="log"
       aria-live={tone === 'warning' ? 'assertive' : 'polite'}

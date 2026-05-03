@@ -22,7 +22,9 @@ export const scorePrediction = (predicted: RenderKey | null, actual: RenderKey |
   return { hit };
 };
 
+// ts-prune-ignore-next
 export const prefetchNext = (componentKey: RenderKey | null) => preloadComponent(componentKey);
 
+// ts-prune-ignore-next
 export const verifyPredictionHit = (actualComponentKey: RenderKey | null) =>
   scorePrediction(actualComponentKey, actualComponentKey).hit;

@@ -16,22 +16,27 @@ export const trackEvent = async (
 };
 
 // Common civic tracking events
+// ts-prune-ignore-next
 export const trackConfusionTime = (stepId: string, seconds: number) => {
   logEvent('confusion_time_spent', { stepId, seconds });
 };
 
+// ts-prune-ignore-next
 export const trackOracleReread = (stepId: string) => {
   logEvent('oracle_reread', { stepId });
 };
 
+// ts-prune-ignore-next
 export const trackDetailRequested = (stepId: string) => {
   logEvent('detail_requested', { stepId });
 };
 
+// ts-prune-ignore-next
 export const trackNavigatedBack = (stepId: string) => {
   logEvent('navigated_back', { stepId });
 };
 
+// ts-prune-ignore-next
 export const trackPredictionHit = (componentId: string) => {
   logEvent('prediction_hit', { componentId });
 };

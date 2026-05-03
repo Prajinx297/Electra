@@ -27,6 +27,7 @@ const luminance = (hex: string) => {
   return 0.2126 * luminanceChannel(r) + 0.7152 * luminanceChannel(g) + 0.0722 * luminanceChannel(b);
 };
 
+// ts-prune-ignore-next
 export const calculateContrastRatio = (foreground: string, background: string): ContrastResult => {
   const lighter = Math.max(luminance(foreground), luminance(background));
   const darker = Math.min(luminance(foreground), luminance(background));
@@ -44,6 +45,7 @@ export const buildOracleAriaLabel = (message: string, tone: string) =>
 export const buildPrimaryActionAriaLabel = (action: PrimaryAction, progressLabel: string) =>
   `${action.label}. Current step: ${progressLabel}.`;
 
+// ts-prune-ignore-next
 export const buildStateChangeAnnouncement = (state: JourneyState, label: string) =>
   `Now on ${label}. Internal state ${state.replace(/_/g, ' ').toLowerCase()}.`;
 

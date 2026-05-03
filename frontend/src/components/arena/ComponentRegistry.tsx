@@ -3,6 +3,7 @@ import { lazy, type ComponentType, type LazyExoticComponent } from 'react';
 import type { RenderKey } from '../../types';
 import VoteCounter from '../simulations/VoteCounter';
 
+
 type Factory = () => Promise<{ default: ComponentType<Record<string, unknown>> }>;
 
 const registry: Partial<Record<RenderKey, Factory>> = {
@@ -47,5 +48,3 @@ export const preloadComponent = (render: RenderKey | null): Promise<unknown> => 
   }
   return (registry[render] ?? fallbackFactory)();
 };
-
-export const ComponentRegistry = registry;

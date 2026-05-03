@@ -25,6 +25,7 @@ import type {
 } from '../../types';
 import { storeLanguagePreference } from '../../utils/validators';
 
+
 const demoPrompts = [
   "I've never voted before. Where do I start?",
   'No, I am not registered yet.',

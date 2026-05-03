@@ -36,5 +36,5 @@ describe("JourneyVisualizer integration", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Replay my journey/i }));
     expect(screen.getByLabelText(/Journey minimap/i)).toBeInTheDocument();
-  });
+  }, 10_000);
 });

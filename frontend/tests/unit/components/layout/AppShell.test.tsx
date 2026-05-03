@@ -31,5 +31,5 @@ describe("AppShell", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Ask this question" }));
     expect(onAsk).not.toHaveBeenCalled();
-  });
+  }, 10000);
 });

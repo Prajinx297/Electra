@@ -1,6 +1,7 @@
 import type { PrimaryAction } from '../../types';
 import { buildPrimaryActionAriaLabel } from '../../utils/accessibilityHelpers';
 
+
 interface ActionBarProps {
   primaryAction: PrimaryAction;
   secondaryAction: PrimaryAction | null;

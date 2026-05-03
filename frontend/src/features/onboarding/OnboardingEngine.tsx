@@ -3,6 +3,8 @@ import { useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import type { OnboardingProfile } from '../../types';
+import { getEntranceMotionProps } from '../../utils/motion';
+
 
 interface OnboardingEngineProps {
   onComplete: (profile: OnboardingProfile) => void;
@@ -62,12 +64,7 @@ export const OnboardingEngine = ({ onComplete }: OnboardingEngineProps) => {
         </div>
         <motion.div
           key={step}
-          {...(reducedMotion
-            ? {}
-            : {
-                initial: { opacity: 0, y: 8 },
-                animate: { opacity: 1, y: 0 },
-              })}
+          {...getEntranceMotionProps(reducedMotion)}
           transition={{ duration: reducedMotion ? 0 : 0.3 }}
           className="mt-6"
         >

@@ -2,6 +2,7 @@ import { getCopy } from '../../i18n';
 import type { LanguageCode } from '../../types';
 import { LanguageSelector } from '../shared/LanguageSelector';
 
+
 interface HeaderProps {
   language: LanguageCode;
   userLabel: string;

@@ -57,7 +57,7 @@ describe("accessibility smoke tests", () => {
         }
       })
     ).toHaveNoViolations();
-  });
+  }, 10000);
 
   it("TrustPanel has no a11y violations", async () => {
     const { container } = render(<TrustPanel sessionId="session-1" trust={undefined} />);

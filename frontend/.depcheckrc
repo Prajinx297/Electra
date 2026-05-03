@@ -1,0 +1,12 @@
+{
+  "ignoreDirs": ["coverage", "dist", "playwright-report", "test-results"],
+  "ignores": [
+    "@vitest/coverage-v8",
+    "autoprefixer",
+    "depcheck",
+    "jscpd",
+    "postcss",
+    "tailwindcss",
+    "ts-prune"
+  ]
+}

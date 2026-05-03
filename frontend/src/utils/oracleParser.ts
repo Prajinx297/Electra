@@ -1,5 +1,6 @@
 import type { OracleResponse, RenderKey } from '../types';
 
+// ts-prune-ignore-next
 export const VALID_RENDER_KEYS: RenderKey[] = [
   'WelcomeStep',
   'GoalSelect',
@@ -17,6 +18,7 @@ export const VALID_RENDER_KEYS: RenderKey[] = [
   'JourneyGraph',
 ];
 
+// ts-prune-ignore-next
 export const FALLBACK_ORACLE_RESPONSE: OracleResponse = {
   message: "Let's take this one small step at a time.",
   tone: 'warm',
@@ -50,6 +52,7 @@ const extractJson = (raw: string) => {
   return first >= 0 && last > first ? raw.slice(first, last + 1) : raw;
 };
 
+// ts-prune-ignore-next
 export const parseOracleResponse = (raw: string): OracleResponse => {
   try {
     const parsed = JSON.parse(extractJson(raw)) as Partial<OracleResponse>;

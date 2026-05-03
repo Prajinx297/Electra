@@ -147,7 +147,7 @@ async def test_verify_rate_limit_rejects_blocked_client(monkeypatch: pytest.Monk
     monkeypatch.setattr(app_dependencies, "get_rate_limiter", lambda: BlockedLimiter())
 
     with pytest.raises(HTTPException) as exc:
-        await verify_rate_limit(SimpleNamespace(client=SimpleNamespace(host="blocked")))
+        await verify_rate_limit(SimpleNamespace(client=SimpleNamespace(host="blocked")))  # type: ignore[arg-type]
 
     assert exc.value.status_code == 429
 
@@ -159,36 +159,29 @@ def test_civic_score_model_validation() -> None:
     assert score.streak_days == 4
 
 
-def test_api_v1_oracle_dependency_override_success() -> None:
-    class Service:
-        async def process(self, _request: OracleRequest) -> OracleResponse:
-            return OracleResponse(
-                render_key=RenderKey.SUMMARY,
-                explanation="Done.",
-                component_props={},
-                predicted_next_keys=[],
-                civic_score_delta=1,
-                confidence=1,
-            )
+def test_api_v1_oracle_dependency_override_success(monkeypatch) -> None:
+    async def mock_generate(*args, **kwargs) -> dict[str, object]:
+        return {"message": "Done.", "trust": {}}
 
     async def allow_rate_limit() -> None:
         return None
 
-    app.dependency_overrides[get_oracle_service] = lambda: Service()
+    import backend.services.gemini_service as gemini_service
+    monkeypatch.setattr(gemini_service.oracle_service, "generate", mock_generate)
     app.dependency_overrides[verify_rate_limit] = allow_rate_limit
     try:
-        response = TestClient(app).post(
-            "/api/v1/oracle",
+        response = TestClient(app, base_url="http://testserver").post(
+            "/api/oracle",
             json={
-                "user_input": "Summarize",
-                "cognitive_level": "simple",
-                "session_id": "session-xyz",
-                "journey_history": [],
-                "locale": "en",
+                "message": "Summarize",
+                "currentState": "home",
+                "cognitiveLevel": "simplified",
+                "language": "en",
+                "sessionId": "session-xyz",
             },
         )
     finally:
         app.dependency_overrides.clear()
 
     assert response.status_code == 200
-    assert response.json()["render_key"] == "summary"
+    assert response.json()["message"] == "Done."

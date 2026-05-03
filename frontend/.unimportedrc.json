@@ -1,0 +1,5 @@
+{
+  "preset": "typescript",
+  "entry": ["src/main.tsx"],
+  "ignoreUnimported": ["src/test/setup.ts"]
+}

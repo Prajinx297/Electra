@@ -27,4 +27,9 @@ describe("ComponentRegistry", () => {
     }
     await expect(preloadComponent(null)).resolves.toBeUndefined();
   });
+
+  it("falls back for unknown render keys", async () => {
+    await expect(preloadComponent("UnknownRender" as RenderKey)).resolves.toHaveProperty("default");
+    expect(getComponent("UnknownRender" as RenderKey)).toBeDefined();
+  });
 });

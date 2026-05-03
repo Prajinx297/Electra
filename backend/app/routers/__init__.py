@@ -1,1 +1,1 @@
-"""API routers."""
+"""API routers for the versioned app namespace."""

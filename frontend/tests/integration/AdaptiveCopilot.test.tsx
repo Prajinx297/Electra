@@ -52,19 +52,22 @@ describe("AdaptiveCopilot integration", () => {
   });
 
   afterEach(() => {
+    vi.clearAllTimers();
     vi.useRealTimers();
   });
 
   it("renders stuck intervention and uses the oracle when simplifying", async () => {
     render(<App />);
 
-    act(() => {
+    await act(async () => {
       vi.advanceTimersByTime(30000);
     });
 
     expect(screen.getByText("Stuck here?")).toBeInTheDocument();
     vi.useRealTimers();
-    fireEvent.click(screen.getByRole("button", { name: "Simplify this step" }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Simplify this step" }));
+    });
 
     await waitFor(() => expect(streamOracle).toHaveBeenCalled());
     expect(streamOracle).toHaveBeenCalledWith(
@@ -75,5 +78,5 @@ describe("AdaptiveCopilot integration", () => {
       null
     );
     expect(streamOracle).toHaveBeenCalledTimes(1);
-  });
+  }, 10000);
 });

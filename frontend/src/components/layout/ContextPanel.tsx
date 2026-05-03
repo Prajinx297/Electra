@@ -2,6 +2,7 @@ import { getCopy } from '../../i18n';
 import type { LanguageCode } from '../../types';
 import { ConfidenceIndicator } from '../shared/ConfidenceIndicator';
 
+
 interface ContextPanelProps {
   language: LanguageCode;
   summary: string;

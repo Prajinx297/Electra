@@ -27,13 +27,13 @@ const VoteCounter = () => {
     <section className="rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_8px_24px_var(--shadow)]">
       <h2 className="text-[1.6rem] font-bold text-[var(--ink)]">Watch votes come in</h2>
       <p className="mt-2 max-w-prose text-[var(--ink-secondary)]">
-        Move the sliders to see how totals change over time.
+        Move the sliders to see how totals change across polling booths.
       </p>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         {[
-          ['Region size', regionSize, setRegionSize, 4000, 50000, 1000],
+          ['Constituency size', regionSize, setRegionSize, 4000, 50000, 1000],
           ['Candidates', candidateCount, setCandidateCount, 2, 4, 1],
-          ['Precincts', precinctCount, setPrecinctCount, 3, 12, 1],
+          ['Polling Booths', precinctCount, setPrecinctCount, 3, 12, 1],
           ['Recount %', threshold, setThreshold, 0.25, 2, 0.25],
         ].map(([label, value, setter, min, max, step]) => (
           <label key={label as string} className="block">
@@ -74,8 +74,8 @@ const VoteCounter = () => {
       </div>
       <div className="mt-4 rounded-[18px] bg-[var(--surface-2)] p-4 text-[var(--ink)]">
         {recount.triggered
-          ? `A recount would trigger here. The margin is ${recount.marginPercent}%.`
-          : `No recount yet. The margin is ${recount.marginPercent}%.`}
+          ? `A recount review would trigger here. The margin is ${recount.marginPercent}%.`
+          : `No recount threshold met. The margin is ${recount.marginPercent}%.`}
       </div>
     </section>
   );

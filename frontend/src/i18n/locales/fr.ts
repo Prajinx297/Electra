@@ -1,5 +1,6 @@
 import type { TranslationDictionary } from '../../types';
 
+/* jscpd:ignore-start */
 export const frLocale: TranslationDictionary & {
   onboarding: Record<string, string>;
   oraclePrompts: Record<string, string>;
@@ -40,3 +41,4 @@ export const frLocale: TranslationDictionary & {
     audit: 'Les audits comparent les totaux machines avec une verification humaine.',
   },
 };
+/* jscpd:ignore-end */

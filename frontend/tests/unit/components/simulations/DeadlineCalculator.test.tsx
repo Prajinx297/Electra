@@ -7,10 +7,12 @@ describe("DeadlineCalculator", () => {
   it("renders deadline results and updates the selected state", async () => {
     render(<DeadlineCalculator />);
 
-    await userEvent.selectOptions(screen.getByLabelText("Your state"), "Georgia");
-    expect(screen.getByRole("link", { name: "Register on your state site" })).toHaveAttribute(
+    await userEvent.selectOptions(screen.getByLabelText("Your state"), "Gujarat");
+    expect(
+      screen.getByRole("link", { name: "Register on your state election commission site" })
+    ).toHaveAttribute(
       "href",
-      "https://mvp.sos.ga.gov"
+      "https://ceogujarat.nic.in"
     );
   });
 });

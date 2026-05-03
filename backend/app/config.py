@@ -1,9 +1,13 @@
+"""Application settings for the Electra backend."""
+
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """Runtime settings loaded from environment variables and defaults."""
+
     app_name: str = "Electra Oracle API"
     api_version: str = "v1"
     gemini_api_key: str = ""
@@ -20,4 +24,5 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    """Return the cached application settings instance."""
     return Settings()

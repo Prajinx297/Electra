@@ -27,6 +27,7 @@ export const trackSimulationInteracted = (simulationId: string, detail: string) 
 export const trackLanguageSwitched = (from: LanguageCode, to: LanguageCode) =>
   trackEvent('language_switched', { from, to });
 
+// ts-prune-ignore-next
 export const useConfusionTimer = (stepId: string) => {
   const mountTime = useRef(Date.now());
 
@@ -41,6 +42,7 @@ export const useConfusionTimer = (stepId: string) => {
   }, [stepId]);
 };
 
+// ts-prune-ignore-next
 export const useOracleScrollTracker = (stepId: string) => {
   const ref = useRef<HTMLDivElement>(null);
   const hasScrolledAway = useRef(false);
